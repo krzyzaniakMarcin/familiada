@@ -67,7 +67,6 @@
   #board .play { display: flex; align-items: center; gap: 2vw; }
   #board .strikes, #board .play::after { content: ''; width: calc(10 * var(--u)); }
   #board .strikes { display: flex; flex-direction: column; align-items: center; font-size: calc(16 * var(--u)); line-height: 1; }
-  #start { position: fixed; inset: 0; background: rgba(0, 0, 0, .85); font-size: calc(4 * var(--u)); border: 0; z-index: 2; }
   #waiting { font-size: calc(4 * var(--u)); opacity: .7; text-transform: uppercase; }
 </style>
 </head>
@@ -91,7 +90,7 @@
   <div>
     <h1>FAMILIADA</h1>
     <p>Family Feud for parties. Open the <b>Host view</b> on your laptop, then open the <b>Board</b> and drag that window
-       to the TV / projector. Click the board once to go fullscreen and enable sounds.</p>
+       to the TV / projector. Double-click the board (or press F) for fullscreen; the first click also enables sounds.</p>
     <a href="#host">Host view</a>
     <a href="#board" target="_blank">Board (TV)</a>
     <p><a class="back" href="#setup">← Change questions</a></p>
@@ -114,7 +113,6 @@
     </div>
     <div class="side"><div class="name"></div><div class="pts box"></div></div>
   </div>
-  <button id="start">Click to start (fullscreen + sound)</button>
 </main>
 
 <script>
@@ -400,12 +398,12 @@ function toggleFullscreen() {
 function initBoard() {
   renderBoard();
   window.addEventListener('storage', e => { if (e.key === KEY) renderBoard(); });
-  document.getElementById('start').onclick = e => {
-    audio = new (window.AudioContext || window.webkitAudioContext)();
-    toggleFullscreen();
-    e.currentTarget.hidden = true;
-  };
-  document.addEventListener('keydown', e => { if (e.key.toLowerCase() === 'f') toggleFullscreen(); });
+  // Browsers only allow sound after the first click/keypress on the page, so resume audio then.
+  audio = new (window.AudioContext || window.webkitAudioContext)();
+  const unlock = () => audio.resume();
+  document.addEventListener('pointerdown', unlock);
+  document.addEventListener('dblclick', toggleFullscreen);
+  document.addEventListener('keydown', e => { unlock(); if (e.key.toLowerCase() === 'f') toggleFullscreen(); });
 }
 
 /* ---------------- Routing ---------------- */
