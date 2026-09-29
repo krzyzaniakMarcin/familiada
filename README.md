@@ -11,6 +11,8 @@ One file, no install, no server. Open `index.html` in Chrome, Edge or Firefox.
 Question text format: a blank line between questions, the question on the first line, then one `answer points` per line (up to 8). End the question line with `x2` or `x3` to make that round double or triple points by default (the host can still change it).
 JSON format (`questions.json`): `[{ "question": "...", "multiplier": 2, "answers": [{ "text": "...", "points": 30 }] }]` (`multiplier` is optional, default 1). **Export JSON** saves the questions from the box.
 
+**Language:** the EN / PL buttons (setup screen and host view) switch the app’s texts; questions stay as you typed them. The board follows automatically.
+
 **Custom sounds:** put `reveal.mp3`, `strike.mp3` and `award.mp3` in the `sounds/` folder next to `index.html` to replace the built-in sounds.
 
 The game state is saved in the browser, so refreshing either window is safe.

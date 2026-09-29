@@ -40,6 +40,8 @@
   .lamp i { display: inline-block; width: .7em; height: .7em; margin-right: .6em; border-radius: 50%;
             border: 1px solid var(--dim); background: #221b00; vertical-align: -.05em; }
   .lamp[aria-pressed="true"] i { background: var(--y); border-color: var(--y); box-shadow: 0 0 .5em var(--y); }
+  .langs { margin-left: auto; display: flex; gap: 4px; }
+  .langs button { padding: .3em .6em; }
   .hint { opacity: .6; font-size: .9rem; }
 
   /* Board */
@@ -70,30 +72,29 @@
 <body>
 
 <main id="setup" hidden>
-  <h1>FAMILIADA — setup</h1>
+  <div class="bar"><h1 data-t="setupTitle"></h1><span class="langs"></span></div>
   <div class="bar">
-    <label>Team 1 <input class="teamName" maxlength="20" placeholder="Team A"></label>
-    <label>Team 2 <input class="teamName" maxlength="20" placeholder="Team B"></label>
+    <label><span data-t="team1"></span> <input class="teamName" maxlength="20" data-tp="teamA"></label>
+    <label><span data-t="team2"></span> <input class="teamName" maxlength="20" data-tp="teamB"></label>
   </div>
-  <p class="hint">One question per block, blank line between questions. First line = question, then one answer per line
-     ending with its points (max 8 answers). End the question line with x2 or x3 for double/triple points. You can also paste JSON (same format as questions.json) or use Import JSON….</p>
+  <p class="hint" data-t="setupHint"></p>
   <textarea id="qText" spellcheck="false"></textarea>
   <div class="bar">
-    <button class="start" id="startGame">Start game ▶</button>
-    <button id="importQ">Import JSON…</button>
-    <button id="exportQ">Export JSON</button>
-    <button id="resetQ">Restore sample questions</button>
+    <button class="start" id="startGame" data-t="start"></button>
+    <button id="importQ" data-t="import"></button>
+    <button id="exportQ" data-t="export"></button>
+    <button id="resetQ" data-t="reset"></button>
     <input type="file" id="qFile" accept=".json,application/json" hidden>
   </div>
 </main>
 
 <main id="host" hidden>
   <div id="hostUi"></div>
-  <p class="hint">Shortcuts: <b>1–8</b> reveal answer · <b>X</b> wrong answer.</p>
+  <p class="hint" data-th="shortcuts"></p>
 </main>
 
 <main id="board" hidden>
-  <div id="waiting">Open the host view to start…</div>
+  <div id="waiting" data-t="waiting"></div>
   <div class="screen" hidden>
     <div class="side"><div class="name"></div><div class="pts box"></div></div>
     <div class="center">
@@ -157,15 +158,72 @@ Cinema 10
 Exam room 7
 Funeral 4`;
 
+/* ---------------- Language (UI only, questions stay as typed) ---------------- */
+const LANG_KEY = 'familiada-lang';
+const T = {
+  en: {
+    setupTitle: 'FAMILIADA — setup', team1: 'Team 1', team2: 'Team 2', teamA: 'Team A', teamB: 'Team B',
+    setupHint: 'One question per block, blank line between questions. First line = question, then one answer per line ending with its points (max 8 answers). End the question line with x2 or x3 for double/triple points. You can also paste JSON (same format as questions.json) or use Import JSON….',
+    start: 'Start game ▶', import: 'Import JSON…', export: 'Export JSON', reset: 'Restore sample questions',
+    shortcuts: 'Shortcuts: <b>1–8</b> reveal answer · <b>X</b> wrong answer.',
+    waiting: 'Open the host view to start…',
+    openBoard: '📺 Open board', question: (n, m) => `Question ${n} / ${m}`, prev: '◀ Prev', next: 'Next ▶', points: 'Points ×',
+    qOnBoard: 'Question on board', revealed: 'Revealed', correct: '✓ Correct', wrong: '✗ WRONG', clearStrikes: 'Clear strikes',
+    bank: 'Bank', awardTo: name => `Award to ${name}`, revealAll: 'Reveal remaining (no points)',
+    awardedHint: 'Round awarded — further reveals add no points.', newGame: 'New game…',
+    confirmNew: 'End this game and choose questions for a new one?', suma: 'TOTAL',
+    noQuestions: 'No questions found.', needText: 'Every question needs text.',
+    badMult: q => `"${q}": multiplier must be 1, 2 or 3.`, badCount: q => `"${q}" needs 1 to 8 answers.`,
+    badAnswer: q => `"${q}": every answer needs "text" and non-negative "points".`,
+    badLine: line => `"${line}" should look like: answer text 25`,
+  },
+  pl: {
+    setupTitle: 'FAMILIADA — ustawienia', team1: 'Drużyna 1', team2: 'Drużyna 2', teamA: 'Drużyna A', teamB: 'Drużyna B',
+    setupHint: 'Jedno pytanie na blok, pusta linia między pytaniami. Pierwsza linia = pytanie, potem po jednej odpowiedzi w linii, zakończonej punktami (maks. 8 odpowiedzi). Dopisz x2 lub x3 na końcu linii pytania, aby podwoić/potroić punkty. Możesz też wkleić JSON (format jak w questions.json) albo użyć „Importuj JSON…”.',
+    start: 'Start gry ▶', import: 'Importuj JSON…', export: 'Eksportuj JSON', reset: 'Przywróć przykładowe pytania',
+    shortcuts: 'Skróty: <b>1–8</b> odkryj odpowiedź · <b>X</b> zła odpowiedź.',
+    waiting: 'Otwórz widok prowadzącego, aby zacząć…',
+    openBoard: '📺 Otwórz tablicę', question: (n, m) => `Pytanie ${n} / ${m}`, prev: '◀ Wstecz', next: 'Dalej ▶', points: 'Punkty ×',
+    qOnBoard: 'Pytanie na tablicy', revealed: 'Odkryta', correct: '✓ Dobrze', wrong: '✗ ŹLE', clearStrikes: 'Wyczyść błędy',
+    bank: 'Pula', awardTo: name => `Punkty dla: ${name}`, revealAll: 'Odkryj resztę (bez punktów)',
+    awardedHint: 'Runda rozliczona — kolejne odpowiedzi nie dają punktów.', newGame: 'Nowa gra…',
+    confirmNew: 'Zakończyć tę grę i wybrać pytania do nowej?', suma: 'SUMA',
+    noQuestions: 'Nie znaleziono pytań.', needText: 'Każde pytanie musi mieć treść.',
+    badMult: q => `„${q}”: mnożnik musi wynosić 1, 2 lub 3.`, badCount: q => `„${q}” musi mieć od 1 do 8 odpowiedzi.`,
+    badAnswer: q => `„${q}”: każda odpowiedź musi mieć "text" i nieujemne "points".`,
+    badLine: line => `„${line}” powinno wyglądać tak: odpowiedź 25`,
+  },
+};
+let lang = 'en';
+try { lang = localStorage.getItem(LANG_KEY) || (navigator.language.startsWith('pl') ? 'pl' : 'en'); } catch {}
+if (!T[lang]) lang = 'en';
+const t = (key, ...args) => { const v = T[lang][key]; return typeof v === 'function' ? v(...args) : v; };
+
+function applyLanguage() {
+  document.documentElement.lang = lang;
+  document.querySelectorAll('[data-t]').forEach(el => el.textContent = t(el.dataset.t));
+  document.querySelectorAll('[data-th]').forEach(el => el.innerHTML = t(el.dataset.th));
+  document.querySelectorAll('[data-tp]').forEach(el => el.placeholder = t(el.dataset.tp));
+  document.querySelectorAll('.langs').forEach(el => el.innerHTML = langSwitch());
+}
+const langSwitch = () => Object.keys(T).map(l =>
+  `<button data-lang="${l}" class="${l === lang ? 'on' : ''}">${l.toUpperCase()}</button>`).join('');
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-lang]');
+  if (!b || b.dataset.lang === lang) return;
+  localStorage.setItem(LANG_KEY, b.dataset.lang); // the board window picks this up via the storage event
+  location.reload();
+});
+
 function checkQuestions(qs) {
-  if (!Array.isArray(qs) || !qs.length) throw new Error('No questions found.');
+  if (!Array.isArray(qs) || !qs.length) throw new Error(t('noQuestions'));
   return qs.map(({ q, answers, multiplier = 1 }) => {
-    if (typeof q !== 'string' || !q.trim()) throw new Error('Every question needs text.');
-    if (![1, 2, 3].includes(multiplier)) throw new Error(`"${q}": multiplier must be 1, 2 or 3.`);
-    if (!Array.isArray(answers) || !answers.length || answers.length > 8) throw new Error(`"${q}" needs 1 to 8 answers.`);
+    if (typeof q !== 'string' || !q.trim()) throw new Error(t('needText'));
+    if (![1, 2, 3].includes(multiplier)) throw new Error(t('badMult', q));
+    if (!Array.isArray(answers) || !answers.length || answers.length > 8) throw new Error(t('badCount', q));
     answers = answers.map(a => {
       if (typeof a?.text !== 'string' || !a.text.trim() || !Number.isFinite(a.points) || a.points < 0)
-        throw new Error(`"${q}": every answer needs "text" and non-negative "points".`);
+        throw new Error(t('badAnswer', q));
       return { text: a.text.trim(), points: a.points };
     });
     return { q: q.trim(), multiplier, answers: answers.sort((a, b) => b.points - a.points) };
@@ -173,13 +231,13 @@ function checkQuestions(qs) {
 }
 
 function parseQuestions(text) {
-  if (!text.trim()) throw new Error('No questions found.');
+  if (!text.trim()) throw new Error(t('noQuestions'));
   return checkQuestions(text.trim().split(/\n\s*\n/).map(block => {
     const [first, ...lines] = block.split('\n').map(l => l.trim()).filter(Boolean);
     const [, q, m] = first.match(/^(.*?)(?:\s+[x×]([123]))?$/i); // "Question x2" = double points
     const answers = lines.map(line => {
       const m = line.match(/^(.+?)\s+(\d+)$/);
-      if (!m) throw new Error(`"${line}" should look like: answer text 25`);
+      if (!m) throw new Error(t('badLine', line));
       return { text: m[1], points: +m[2] };
     });
     return { q, answers, multiplier: m ? +m : 1 };
@@ -236,7 +294,7 @@ const act = {
   toggleQ() { state.showQuestion = !state.showQuestion; save(); },
   openBoard() { window.open(location.href.split('#')[0] + '#board', 'familiada-board', 'popup,width=1280,height=720'); },
   newGame() {
-    if (confirm('End this game and choose questions for a new one?')) location.hash = 'setup';
+    if (confirm(t('confirmNew'))) location.hash = 'setup';
   },
 };
 
@@ -244,34 +302,34 @@ function renderHost() {
   const q = cur(), s = state;
   document.getElementById('hostUi').innerHTML = `
     <div class="bar">
-      <button data-a="openBoard">📺 Open board</button>
-      <span>Question ${s.round + 1} / ${s.questions.length}</span>
-      <button data-a="round" data-i="${s.round - 1}" ${s.round === 0 ? 'disabled' : ''}>◀ Prev</button>
-      <button data-a="round" data-i="${s.round + 1}" ${s.round === s.questions.length - 1 ? 'disabled' : ''}>Next ▶</button>
-      <span>Points ×</span>${[1, 2, 3].map(m =>
+      <button data-a="openBoard">${t('openBoard')}</button>
+      <span>${t('question', s.round + 1, s.questions.length)}</span>
+      <button data-a="round" data-i="${s.round - 1}" ${s.round === 0 ? 'disabled' : ''}>${t('prev')}</button>
+      <button data-a="round" data-i="${s.round + 1}" ${s.round === s.questions.length - 1 ? 'disabled' : ''}>${t('next')}</button>
+      <span>${t('points')}</span>${[1, 2, 3].map(m =>
         `<button data-a="mult" data-i="${m}" class="${s.multiplier === m ? 'on' : ''}">${m}</button>`).join('')}
-      <button data-a="toggleQ" class="lamp" aria-pressed="${s.showQuestion}"><i></i>Question on board</button>
+      <button data-a="toggleQ" class="lamp" aria-pressed="${s.showQuestion}"><i></i>${t('qOnBoard')}</button>
     </div>
     <div class="panel">
       <h2>${esc(q.q)}</h2>
       ${q.answers.map((a, i) => `
         <div class="ans ${s.revealed[i] ? 'done' : ''}">
           <b>${i + 1}</b><span>${esc(a.text)}</span><b>${a.points}</b>
-          <button class="ok" data-a="reveal" data-i="${i}" ${s.revealed[i] ? 'disabled' : ''}>${s.revealed[i] ? 'Revealed' : '✓ Correct'}</button>
+          <button class="ok" data-a="reveal" data-i="${i}" ${s.revealed[i] ? 'disabled' : ''}>${s.revealed[i] ? t('revealed') : t('correct')}</button>
         </div>`).join('')}
     </div>
     <div class="panel bar">
-      <button class="wrong" data-a="wrong" ${s.strikes >= 3 ? 'disabled' : ''}>✗ WRONG</button>
+      <button class="wrong" data-a="wrong" ${s.strikes >= 3 ? 'disabled' : ''}>${t('wrong')}</button>
       <span class="strikes">${'✗'.repeat(s.strikes)}${'·'.repeat(3 - s.strikes)}</span>
-      <button data-a="clearStrikes">Clear strikes</button>
+      <button data-a="clearStrikes">${t('clearStrikes')}</button>
     </div>
     <div class="panel bar">
-      <span class="score">Bank: ${s.bank * s.multiplier}</span>
-      ${s.teams.map((t, i) => `<button data-a="award" data-i="${i}" ${s.awarded ? 'disabled' : ''}>Award to ${esc(t.name)}</button>`).join('')}
-      <button data-a="revealAll">Reveal remaining (no points)</button>
-      ${s.awarded ? '<span class="hint">Round awarded — further reveals add no points.</span>' : ''}
+      <span class="score">${t('bank')}: ${s.bank * s.multiplier}</span>
+      ${s.teams.map((team, i) => `<button data-a="award" data-i="${i}" ${s.awarded ? 'disabled' : ''}>${t('awardTo', esc(team.name))}</button>`).join('')}
+      <button data-a="revealAll">${t('revealAll')}</button>
+      ${s.awarded ? `<span class="hint">${t('awardedHint')}</span>` : ''}
     </div>
-    <div class="bar"><button data-a="newGame">New game…</button></div>`;
+    <div class="bar"><button data-a="newGame">${t('newGame')}</button><span class="langs">${langSwitch()}</span></div>`;
 }
 
 const serialize = qs => qs.map(q => [q.q + (q.multiplier > 1 ? ` x${q.multiplier}` : ''), ...q.answers.map(a => `${a.text} ${a.points}`)].join('\n')).join('\n\n');
@@ -384,7 +442,7 @@ function renderBoard() {
     if (!s.revealed[i]) return `<span>${i + 1}</span><span class="t blank">${'.'.repeat(16)}</span><span class="p">--</span>`;
     const cls = sameRound && !prev.revealed[i] ? ' new' : '';
     return `<span>${i + 1}</span><span class="t${cls}">${esc(a.text)}</span><span class="p${cls}">${a.points * s.multiplier}</span>`;
-  }).join('') + `<span></span><span class="suma">SUMA</span><span class="p suma">${
+  }).join('') + `<span></span><span class="suma">${t('suma')}</span><span class="p suma">${
     q.answers.reduce((sum, a, i) => sum + (s.revealed[i] ? a.points * s.multiplier : 0), 0)}</span>`;
   const newStrike = sameRound && s.strikes > prev.strikes;
   $('.strikes').innerHTML = Array.from({ length: s.strikes }, (_, i) =>
@@ -398,13 +456,14 @@ function toggleFullscreen() {
 
 function initBoard() {
   renderBoard();
-  window.addEventListener('storage', e => { if (e.key === KEY) renderBoard(); });
+  window.addEventListener('storage', e => { if (e.key === KEY) renderBoard(); if (e.key === LANG_KEY) location.reload(); });
   document.addEventListener('dblclick', toggleFullscreen);
   document.addEventListener('keydown', e => { if (e.key.toLowerCase() === 'f') toggleFullscreen(); });
 }
 
 /* ---------------- Routing ---------------- */
 const view = { host: 'host', board: 'board' }[location.hash.slice(1)] || 'setup';
+applyLanguage();
 document.getElementById(view).hidden = false;
 ({ setup: initSetup, host: initHost, board: initBoard })[view]?.();
 window.addEventListener('hashchange', () => location.reload());
