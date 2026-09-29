@@ -3,14 +3,28 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Familiada weselna — darmowa gra Familiada online na wesele i imprezę</title>
-<meta name="description" content="Darmowa Familiada online na wesele, urodziny i imprezy. Wpisz własne pytania, wyświetl tablicę na TV lub projektorze i prowadź grę z laptopa. Bez instalacji i rejestracji.">
+<title>Familiada na wesele i imprezę — darmowa gra online dla prowadzącego (Family Feud)</title>
+<meta name="description" content="Darmowa Familiada na wesele, urodziny i imprezę. Prowadzący steruje grą z laptopa, a tablica z odpowiedziami wyświetla się na TV lub projektorze. Własne pytania, dźwięki, bez instalacji. Family Feud for parties and weddings.">
 <link rel="canonical" href="https://familiadaweselna.pl/">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://familiadaweselna.pl/">
-<meta property="og:title" content="Familiada weselna — gra online na wesele i imprezę">
-<meta property="og:description" content="Darmowa Familiada z własnymi pytaniami. Tablica na TV, prowadzenie z laptopa, bez instalacji.">
+<meta property="og:title" content="Familiada na wesele i imprezę — gra online dla prowadzącego">
+<meta property="og:description" content="Prowadzący steruje z laptopa, tablica na TV. Własne pytania, bez instalacji. Family Feud for parties and weddings.">
 <meta property="og:locale" content="pl_PL">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@graph":[
+ {"@type":"WebApplication","name":"Familiada weselna","alternateName":"Family Feud for parties","url":"https://familiadaweselna.pl/",
+  "applicationCategory":"GameApplication","operatingSystem":"Any (web browser)","inLanguage":["pl","en"],
+  "offers":{"@type":"Offer","price":"0","priceCurrency":"PLN"},
+  "description":"Darmowa Familiada (Family Feud) na wesele i imprezę: prowadzący steruje grą z laptopa, tablica wyświetla się na TV lub projektorze."},
+ {"@type":"FAQPage","mainEntity":[
+  {"@type":"Question","name":"Czy do gry potrzebny jest prowadzący?","acceptedAnswer":{"@type":"Answer","text":"Tak. Jak w telewizyjnej Familiadzie, grę prowadzi jedna osoba — wodzirej, DJ, świadek lub ktoś z gości. Prowadzący czyta pytania, zaznacza trafione odpowiedzi i błędy na laptopie, a drużyny widzą tablicę na telewizorze lub projektorze."}},
+  {"@type":"Question","name":"Czego potrzebuję, żeby zagrać w Familiadę na weselu?","acceptedAnswer":{"@type":"Answer","text":"Laptopa z przeglądarką (Chrome, Edge lub Firefox) i telewizora albo projektora podłączonego przez HDMI. Nie trzeba niczego instalować ani zakładać konta."}},
+  {"@type":"Question","name":"Czy mogę wpisać własne pytania?","acceptedAnswer":{"@type":"Answer","text":"Tak. Wpisujesz własne pytania i odpowiedzi z punktami, np. o parze młodej, rodzinie czy solenizancie. Pytania można zapisać i wczytać z pliku JSON."}},
+  {"@type":"Question","name":"Is this Family Feud in English?","acceptedAnswer":{"@type":"Answer","text":"Yes. Switch the app to English with the EN button. It works as a free Family Feud game for parties and weddings: the host runs it from a laptop and the board shows on a TV or projector."}}
+ ]}
+]}
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Doto:wght@700;900&display=swap" rel="stylesheet">
@@ -54,6 +68,7 @@
   .langs button { padding: .3em .6em; }
   .coffee img { display: block; }
   .hint { opacity: .6; font-size: .9rem; }
+  .about { margin-top: 24px; line-height: 1.5; font-weight: normal; }
 
   /* Board */
   #board { --u: min(1vh, .5625vw); height: 100vh; overflow: hidden; display: grid; place-items: center; padding: calc(3 * var(--u)) 2vw; }
@@ -98,6 +113,21 @@
     <button id="resetQ" data-tt="reset"></button>
     <input type="file" id="qFile" accept=".json,application/json" hidden>
   </div>
+  <!-- Static text for search engines and first-time visitors (not translated by the app on purpose). -->
+  <section class="panel about" lang="pl">
+    <h2>Familiada na wesele i imprezę</h2>
+    <p>Darmowa gra w stylu teleturnieju Familiada — idealna zabawa weselna, na urodziny, wieczór panieński, kawalerski, firmową imprezę czy rodzinne spotkanie. Działa w przeglądarce, bez instalacji i bez rejestracji.</p>
+    <h3>Potrzebny jest prowadzący</h3>
+    <p>Jak w telewizji, grę prowadzi jedna osoba: wodzirej, DJ, świadek albo ktoś z gości. Prowadzący ma na laptopie pytania i wszystkie odpowiedzi, zaznacza trafienia i błędy, przyznaje punkty. Drużyny widzą tylko tablicę z odsłanianymi odpowiedziami na telewizorze lub projektorze — z dźwiękami jak w oryginale.</p>
+    <h3>Jak zagrać</h3>
+    <ol>
+      <li>Wpisz nazwy drużyn i własne pytania z odpowiedziami i punktami (np. o parze młodej).</li>
+      <li>Kliknij „Start”. Otworzy się okno tablicy — przeciągnij je na TV/projektor i włącz pełny ekran.</li>
+      <li>Prowadzący zaznacza odpowiedzi na laptopie, a tablica aktualizuje się na żywo.</li>
+    </ol>
+    <h3>Family Feud for weddings and parties</h3>
+    <p lang="en">A free Family Feud game for weddings and parties (switch to English with the EN button). The host runs the game from a laptop with all the answers, while the teams watch the survey board on a TV or projector. Type your own questions, no install, no sign-up.</p>
+  </section>
 </main>
 
 <main id="host" hidden>
