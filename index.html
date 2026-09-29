@@ -252,8 +252,7 @@ function renderHost() {
   document.getElementById('hostUi').innerHTML = `
     <div class="bar">
       <button data-a="openBoard">📺 Open board window</button>
-      <select id="roundSel">${s.questions.map((x, i) =>
-        `<option value="${i}" ${i === s.round ? 'selected' : ''}>Round ${i + 1}: ${esc(x.q)}</option>`).join('')}</select>
+      <span>Question ${s.round + 1} / ${s.questions.length}</span>
       <button data-a="round" data-i="${s.round - 1}" ${s.round === 0 ? 'disabled' : ''}>◀ Prev</button>
       <button data-a="round" data-i="${s.round + 1}" ${s.round === s.questions.length - 1 ? 'disabled' : ''}>Next ▶</button>
       <span>Points ×</span>${[1, 2, 3].map(m =>
@@ -293,9 +292,6 @@ function initHost() {
     const b = e.target.closest('[data-a]');
     if (!b) return;
     act[b.dataset.a](+b.dataset.i);
-  });
-  ui.addEventListener('change', e => {
-    if (e.target.id === 'roundSel') act.round(+e.target.value);
   });
   document.addEventListener('keydown', e => {
     if (e.target.matches('input, textarea, select') || e.metaKey || e.ctrlKey || e.altKey) return;
