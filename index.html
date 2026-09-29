@@ -45,6 +45,7 @@
   .i18n > .off { visibility: hidden; }
   .langs { margin-left: auto; display: flex; gap: 4px; }
   .langs button { padding: .3em .6em; }
+  .coffee img { display: block; }
   .hint { opacity: .6; font-size: .9rem; }
 
   /* Board */
@@ -75,7 +76,8 @@
 <body>
 
 <main id="setup" hidden>
-  <div class="bar"><h1 data-tt="setupTitle"></h1><span class="langs"></span></div>
+  <div class="bar"><h1 data-tt="setupTitle"></h1><span class="langs"></span>
+    <a class="coffee" href="https://buycoffee.to/ziemniaq" target="_blank" rel="noopener"><img src="https://buycoffee.to/btn/buycoffeeto-btn-primary.svg" alt="Postaw kawę ☕" height="42"></a></div>
   <div class="bar">
     <label><span data-tt="team1"></span> <input class="teamName" maxlength="20" data-tp="teamA"></label>
     <label><span data-tt="team2"></span> <input class="teamName" maxlength="20" data-tp="teamB"></label>
