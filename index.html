@@ -107,6 +107,8 @@
     #board .play::after { display: none; }
   }
 </style>
+<script>window.goatcounter = { path: p => p + location.hash }; // count setup/host/board views separately</script>
+<script data-goatcounter="https://ziemniaq.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
 </head>
 <body>
 
@@ -321,6 +323,7 @@ function load() {
   try { const s = JSON.parse(localStorage.getItem(KEY)); return s && s.questions ? s : null; } catch { return null; }
 }
 
+const track = name => window.goatcounter?.count?.({ path: name, event: true });
 const esc = s => String(s).replace(/[&<>"']/g, c => `&#${c.charCodeAt(0)};`);
 
 /* ---------------- Host ---------------- */
@@ -347,18 +350,20 @@ const act = {
     state.revealed[i] = true;
     if (!state.awarded) state.bank += cur().answers[i].points;
     save('reveal');
+    track('correct-answer');
   },
-  wrong() { state.strikes = Math.min(3, state.strikes + 1); save('strike'); },
+  wrong() { state.strikes = Math.min(3, state.strikes + 1); save('strike'); track('wrong-answer'); },
   clearStrikes() { state.strikes = 0; save(); },
   award(t) {
     if (state.awarded) return;
     state.teams[t].score += state.bank * state.multiplier;
     state.bank = 0; state.awarded = true;
     save('award');
+    track('points-added');
   },
   revealAll() { state.revealed.fill(true); save(); },
   mult(m) { state.multiplier = m; save(); },
-  round(r) { if (r >= 0 && r < state.questions.length) { startRound(r); save(); } },
+  round(r) { if (r >= 0 && r < state.questions.length) { startRound(r); save(); track('question-changed'); } },
   toggleQ() { state.showQuestion = !state.showQuestion; save(); },
   openBoard() { window.open(location.href.split('#')[0] + '#board', 'familiada-board', 'popup,width=1280,height=720'); },
   newGame() {
