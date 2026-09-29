@@ -43,7 +43,6 @@
   #host .wrong { border-color: var(--red); color: var(--red); font-size: 1.5rem; padding: .5em 1.5em; }
   #host .wrong:hover:not(:disabled) { background: #300; }
   #host .strikes { font-size: 2rem; color: var(--red); letter-spacing: .2em; min-width: 4em; }
-  #host .teams { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
   .score { font-size: 2rem; }
   #setup textarea { width: 100%; height: 55vh; }
   #setup .start { background: var(--y); color: #000; font-size: 1.2rem; }
@@ -244,7 +243,6 @@ const act = {
   mult(m) { state.multiplier = m; save(); },
   round(r) { if (r >= 0 && r < state.questions.length) { startRound(r); save(); } },
   toggleQ() { state.showQuestion = !state.showQuestion; save(); },
-  adjust(t, d) { state.teams[t].score += d; save(); },
   openBoard() { window.open(location.href.split('#')[0] + '#board', 'familiada-board', 'popup,width=1280,height=720'); },
   newGame() {
     if (confirm('End this game and choose questions for a new one?')) location.hash = 'setup';
@@ -283,14 +281,6 @@ function renderHost() {
       <button data-a="revealAll">Reveal remaining (no points)</button>
       ${s.awarded ? '<span class="hint">Round awarded — further reveals add no points.</span>' : ''}
     </div>
-    <div class="teams">${s.teams.map((t, i) => `
-      <div class="panel">
-        <input class="teamName" data-i="${i}" value="${esc(t.name)}" aria-label="Team ${i + 1} name">
-        <div class="bar"><span class="score">${t.score}</span>
-          <button data-a="adjust" data-i="${i}" data-d="-5">−5</button>
-          <button data-a="adjust" data-i="${i}" data-d="5">+5</button></div>
-      </div>`).join('')}
-    </div>
     <div class="bar"><button data-a="newGame">New game…</button></div>`;
 }
 
@@ -304,11 +294,10 @@ function initHost() {
   ui.addEventListener('click', e => {
     const b = e.target.closest('[data-a]');
     if (!b) return;
-    b.dataset.a === 'adjust' ? act.adjust(+b.dataset.i, +b.dataset.d) : act[b.dataset.a](+b.dataset.i);
+    act[b.dataset.a](+b.dataset.i);
   });
   ui.addEventListener('change', e => {
     if (e.target.id === 'roundSel') act.round(+e.target.value);
-    if (e.target.classList.contains('teamName')) { state.teams[+e.target.dataset.i].name = e.target.value.trim() || 'Team'; save(); }
   });
   document.addEventListener('keydown', e => {
     if (e.target.matches('input, textarea, select') || e.metaKey || e.ctrlKey || e.altKey) return;
