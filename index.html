@@ -37,6 +37,9 @@
   .score { font-size: 2rem; }
   #setup textarea { width: 100%; height: 55vh; }
   #setup .start { background: var(--y); color: #000; font-size: 1.2rem; }
+  .lamp i { display: inline-block; width: .7em; height: .7em; margin-right: .6em; border-radius: 50%;
+            border: 1px solid var(--dim); background: #221b00; vertical-align: -.05em; }
+  .lamp[aria-pressed="true"] i { background: var(--y); border-color: var(--y); box-shadow: 0 0 .5em var(--y); }
   .hint { opacity: .6; font-size: .9rem; }
 
   /* Board */
@@ -244,7 +247,7 @@ function renderHost() {
       <button data-a="round" data-i="${s.round + 1}" ${s.round === s.questions.length - 1 ? 'disabled' : ''}>Next ▶</button>
       <span>Points ×</span>${[1, 2, 3].map(m =>
         `<button data-a="mult" data-i="${m}" class="${s.multiplier === m ? 'on' : ''}">${m}</button>`).join('')}
-      <button data-a="toggleQ" class="${s.showQuestion ? 'on' : ''}">[${s.showQuestion ? 'X' : ' '}] Question on board</button>
+      <button data-a="toggleQ" class="lamp" aria-pressed="${s.showQuestion}"><i></i>Question on board</button>
     </div>
     <div class="panel">
       <h2>${esc(q.q)}</h2>
