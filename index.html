@@ -50,7 +50,8 @@
   #board .box { display: inline-block; min-width: 3.4ch; padding: 0 .3ch; text-align: right; font-size: calc(10 * var(--u)); line-height: 1.2;
                 border: calc(.3 * var(--u)) solid #2b2b2b; background: #0a0a0a; }
   #board .center { display: flex; flex-direction: column; align-items: center; gap: calc(2 * var(--u)); }
-  #board .question { font-size: calc(3.6 * var(--u)); max-width: 55vw; text-align: center; text-transform: uppercase; }
+  #board .question { font-size: calc(3.6 * var(--u)); max-width: 55vw; text-align: center; text-transform: uppercase;
+                    height: 2.4em; line-height: 1.2; overflow: hidden; display: flex; align-items: center; } /* fixed 2-line slot */
   #board .rows { display: grid; grid-template-columns: auto 16ch 3ch; column-gap: 1ch; line-height: 1.2; text-transform: uppercase; }
   #board .t { white-space: nowrap; overflow: hidden; }
   #board .blank { transform: translateY(-.35em); } /* lift baseline dots to mid-height so rows look evenly spaced */
@@ -95,7 +96,7 @@
     <div class="side"><div class="name"></div><div class="pts box"></div></div>
     <div class="center">
       <div class="bank box"></div>
-      <div class="question" hidden></div>
+      <div class="question"></div>
       <div class="play"><div class="strikes"></div><div class="rows"></div></div>
     </div>
     <div class="side"><div class="name"></div><div class="pts box"></div></div>
@@ -209,7 +210,7 @@ function startRound(round) {
 function save(eventType) {
   if (eventType) state.event = { type: eventType, n: state.event.n + 1 };
   localStorage.setItem(KEY, JSON.stringify(state));
-  if (view === 'host') renderHost();
+  if (view === 'host') { renderHost(); sounds[eventType]?.(); }
 }
 
 const act = {
@@ -330,11 +331,14 @@ function initSetup() {
   document.getElementById('resetQ').onclick = () => { qText.value = SAMPLE; };
 }
 
-/* ---------------- Board ---------------- */
-let audio, lastN = null, prev = null;
+/* ---------------- Sounds ---------------- */
+// Played by the host window: browsers only allow sound in a page the user has clicked, and the host is where
+// the clicks happen. Both windows run on the same computer, so the sound goes to the same speakers/TV.
+let audio;
 
 function tone(freq, at, dur, type = 'sine', vol = 0.2) {
-  if (!audio) return;
+  audio ??= new (window.AudioContext || window.webkitAudioContext)();
+  audio.resume();
   const o = audio.createOscillator(), g = audio.createGain(), t = audio.currentTime + at;
   o.type = type; o.frequency.value = freq;
   g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.001, t + dur);
@@ -345,6 +349,9 @@ const sounds = {
   strike: () => { tone(140, 0, .8, 'square', .15); tone(147, 0, .8, 'sawtooth', .12); },
   award: () => [523, 659, 784, 1047].forEach((f, i) => tone(f, i * .12, .35, 'triangle')),
 };
+
+/* ---------------- Board ---------------- */
+let prev = null;
 
 function renderBoard() {
   const s = load(), $ = sel => document.querySelector('#board ' + sel);
@@ -357,7 +364,7 @@ function renderBoard() {
     el.querySelector('.pts').textContent = s.teams[i].score;
   });
   $('.bank').textContent = s.bank * s.multiplier;
-  $('.question').hidden = !s.showQuestion;
+  $('.question').style.visibility = s.showQuestion ? 'visible' : 'hidden'; // keep its space so nothing shifts
   $('.question').textContent = q.q;
 
   const sameRound = prev && prev.round === s.round && prev.q === q.q;
@@ -373,11 +380,6 @@ function renderBoard() {
   $('.strikes').innerHTML = Array.from({ length: s.strikes }, (_, i) =>
     `<span${newStrike && i === s.strikes - 1 ? ' class="new"' : ''}>X</span>`).join('');
   prev = { round: s.round, q: q.q, revealed: s.revealed, strikes: s.strikes };
-
-  if (lastN !== null && s.event.n !== lastN) {
-    sounds[s.event.type]?.();
-  }
-  lastN = s.event.n;
 }
 
 function toggleFullscreen() {
@@ -387,12 +389,8 @@ function toggleFullscreen() {
 function initBoard() {
   renderBoard();
   window.addEventListener('storage', e => { if (e.key === KEY) renderBoard(); });
-  // Browsers only allow sound after the first click/keypress on the page, so resume audio then.
-  audio = new (window.AudioContext || window.webkitAudioContext)();
-  const unlock = () => audio.resume();
-  document.addEventListener('pointerdown', unlock);
   document.addEventListener('dblclick', toggleFullscreen);
-  document.addEventListener('keydown', e => { unlock(); if (e.key.toLowerCase() === 'f') toggleFullscreen(); });
+  document.addEventListener('keydown', e => { if (e.key.toLowerCase() === 'f') toggleFullscreen(); });
 }
 
 /* ---------------- Routing ---------------- */
