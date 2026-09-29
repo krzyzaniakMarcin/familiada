@@ -59,6 +59,7 @@
   #board .question { font-size: calc(3.6 * var(--u)); max-width: 55vw; text-align: center; text-transform: uppercase; }
   #board .rows { display: grid; grid-template-columns: auto 16ch 3ch; column-gap: 1ch; line-height: 1.2; text-transform: uppercase; }
   #board .t { white-space: nowrap; overflow: hidden; }
+  #board .blank { transform: translateY(-.35em); } /* lift baseline dots to mid-height so rows look evenly spaced */
   #board .p { text-align: right; }
   #board .suma { text-align: right; margin-top: .3em; }
   #board .new { animation: blink .6s steps(2, jump-none) 2; }
@@ -379,7 +380,7 @@ function renderBoard() {
   const rows = $('.rows'), n = q.answers.length;
   rows.style.fontSize = `calc(${Math.min(6.5, 56 / ((n + 1) * 1.2))} * var(--u))`;
   rows.innerHTML = q.answers.map((a, i) => {
-    if (!s.revealed[i]) return `<span>${i + 1}</span><span class="t">${'.'.repeat(16)}</span><span class="p">--</span>`;
+    if (!s.revealed[i]) return `<span>${i + 1}</span><span class="t blank">${'.'.repeat(16)}</span><span class="p">--</span>`;
     const cls = sameRound && !prev.revealed[i] ? ' new' : '';
     return `<span>${i + 1}</span><span class="t${cls}">${esc(a.text)}</span><span class="p${cls}">${a.points * s.multiplier}</span>`;
   }).join('') + `<span></span><span class="suma">SUMA</span><span class="p suma">${
