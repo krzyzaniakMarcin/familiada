@@ -16,3 +16,4 @@ JSON format (`questions.json`): `[{ "question": "...", "multiplier": 2, "answers
 The game state is saved in the browser, so refreshing either window is safe.
 
 Hosting online instead? Drop `index.html` on any static host (GitHub Pages, Netlify). Host and board must run in the same browser on the same computer.
+# familiada
