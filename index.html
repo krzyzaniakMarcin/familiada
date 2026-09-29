@@ -24,11 +24,11 @@
                background: var(--gold); border-radius: 12px; text-decoration: none; }
   #landing p { font-family: Arial, sans-serif; opacity: .8; max-width: 36em; line-height: 1.5; }
 
-  /* Host */
-  #host { max-width: 1000px; margin: 0 auto; padding: 16px; font-family: Arial, sans-serif; }
-  #host .bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 12px; }
-  #host h2 { color: var(--gold); margin: .4em 0; }
-  #host .panel { background: rgba(0,0,0,.35); border: 1px solid #334; border-radius: 10px; padding: 12px; margin-bottom: 12px; }
+  /* Setup + Host */
+  #setup, #host { max-width: 1000px; margin: 0 auto; padding: 16px; font-family: Arial, sans-serif; }
+  .bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 12px; }
+  #setup h2, #host h2 { color: var(--gold); margin: .4em 0; }
+  .panel { background: rgba(0,0,0,.35); border: 1px solid #334; border-radius: 10px; padding: 12px; margin-bottom: 12px; }
   #host .ans { display: grid; grid-template-columns: 2em 1fr 3em 9em; gap: 8px; align-items: center; padding: 6px 0;
                border-bottom: 1px solid #223; font-size: 1.2rem; }
   #host .ans.done { opacity: .45; }
@@ -38,8 +38,10 @@
   #host .strikes { font-size: 2rem; color: var(--red); letter-spacing: .2em; min-width: 4em; }
   #host .teams { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
   #host .score { font-size: 2rem; color: var(--gold); font-weight: bold; }
-  #host textarea { width: 100%; height: 300px; }
-  #host .hint { opacity: .6; font-size: .9rem; }
+  #setup h1 { color: var(--gold); margin: .2em 0; }
+  #setup textarea { width: 100%; height: 55vh; }
+  #setup .start { background: var(--gold); color: var(--deep); font-size: 1.3rem; font-weight: bold; }
+  .hint { opacity: .6; font-size: .9rem; }
 
   /* Board */
   #board { height: 100vh; display: flex; flex-direction: column; padding: 2vh 3vw; gap: 2vh; overflow: hidden; }
@@ -74,6 +76,20 @@
 </head>
 <body>
 
+<main id="setup" hidden>
+  <h1>FAMILIADA — questions</h1>
+  <p class="hint">One question per block, blank line between questions. First line = question, then one answer per line
+     ending with its points (max 8 answers). You can also paste JSON (same format as questions.json) or use Import JSON….</p>
+  <textarea id="qText" spellcheck="false"></textarea>
+  <div class="bar">
+    <button class="start" id="startGame">Start game ▶</button>
+    <button id="importQ">Import JSON…</button>
+    <button id="exportQ">Export JSON</button>
+    <button id="resetQ">Restore sample questions</button>
+    <input type="file" id="qFile" accept=".json,application/json" hidden>
+  </div>
+</main>
+
 <main id="landing" hidden>
   <div>
     <h1>FAMILIADA</h1>
@@ -81,24 +97,12 @@
        to the TV / projector. Click the board once to go fullscreen and enable sounds.</p>
     <a href="#host">Host view</a>
     <a href="#board" target="_blank">Board (TV)</a>
+    <p><a href="#setup" style="background:none;color:var(--gold);font-size:1rem">← Change questions</a></p>
   </div>
 </main>
 
 <main id="host" hidden>
   <div id="hostUi"></div>
-  <details class="panel">
-    <summary>Edit questions</summary>
-    <p class="hint">One question per block, blank line between questions. First line = question, then one answer per line
-       ending with its points (max 8 answers). Loading questions starts a new game (team names are kept).</p>
-    <textarea id="qText" spellcheck="false"></textarea>
-    <div class="bar">
-      <button id="loadQ">Load questions</button>
-      <button id="resetQ">Restore sample questions</button>
-      <button id="importQ">Import JSON…</button>
-      <button id="exportQ">Export JSON</button>
-      <input type="file" id="qFile" accept=".json,application/json" hidden>
-    </div>
-  </details>
   <p class="hint">Shortcuts: <b>1–8</b> reveal answer · <b>X</b> wrong answer.</p>
 </main>
 
@@ -219,7 +223,7 @@ function startRound(round) {
 function save(eventType) {
   if (eventType) state.event = { type: eventType, n: state.event.n + 1 };
   localStorage.setItem(KEY, JSON.stringify(state));
-  renderHost();
+  if (view === 'host') renderHost();
 }
 
 const act = {
@@ -244,7 +248,7 @@ const act = {
   adjust(t, d) { state.teams[t].score += d; save(); },
   openBoard() { window.open(location.href.split('#')[0] + '#board', 'familiada-board', 'popup,width=1280,height=720'); },
   newGame() {
-    if (confirm('Reset scores and start from round 1?')) { newGame(state.questions, state.teams.map(t => t.name)); save(); }
+    if (confirm('End this game and choose questions for a new one?')) location.hash = 'setup';
   },
 };
 
@@ -288,17 +292,16 @@ function renderHost() {
           <button data-a="adjust" data-i="${i}" data-d="5">+5</button></div>
       </div>`).join('')}
     </div>
-    <div class="bar"><button data-a="newGame">New game (reset scores)</button></div>`;
+    <div class="bar"><button data-a="newGame">New game…</button></div>`;
 }
 
 const serialize = qs => qs.map(q => [q.q, ...q.answers.map(a => `${a.text} ${a.points}`)].join('\n')).join('\n\n');
 
 function initHost() {
   state = load();
-  if (!state) { newGame(parseQuestions(SAMPLE)); }
-  save();
-  const ui = document.getElementById('hostUi'), qText = document.getElementById('qText');
-  qText.value = serialize(state.questions);
+  if (!state) { location.hash = 'setup'; return; }
+  renderHost();
+  const ui = document.getElementById('hostUi');
   ui.addEventListener('click', e => {
     const b = e.target.closest('[data-a]');
     if (!b) return;
@@ -308,36 +311,48 @@ function initHost() {
     if (e.target.id === 'roundSel') act.round(+e.target.value);
     if (e.target.classList.contains('teamName')) { state.teams[+e.target.dataset.i].name = e.target.value.trim() || 'Team'; save(); }
   });
-  const loadQuestions = parse => {
-    try { newGame(parse(), state.teams.map(t => t.name)); save(); qText.value = serialize(state.questions); }
-    catch (err) { alert(err.message); }
-  };
-  document.getElementById('loadQ').onclick = () => loadQuestions(() => parseQuestions(qText.value));
-  const qFile = document.getElementById('qFile');
-  document.getElementById('importQ').onclick = () => qFile.click();
-  qFile.onchange = async () => {
-    const file = qFile.files[0];
-    qFile.value = '';
-    if (!file) return;
-    const text = await file.text();
-    loadQuestions(() => {
-      try { return fromJson(JSON.parse(text)); }
-      catch (err) { throw new Error(`${file.name}: ${err.message}`); }
-    });
-  };
-  document.getElementById('exportQ').onclick = () => {
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(new Blob([toJson(state.questions)], { type: 'application/json' }));
-    a.download = 'questions.json';
-    a.click();
-    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-  };
-  document.getElementById('resetQ').onclick = () => { qText.value = SAMPLE; };
   document.addEventListener('keydown', e => {
     if (e.target.matches('input, textarea, select') || e.metaKey || e.ctrlKey || e.altKey) return;
     if (e.key >= '1' && e.key <= '8') act.reveal(+e.key - 1);
     if (e.key.toLowerCase() === 'x' && state.strikes < 3) act.wrong();
   });
+}
+
+/* ---------------- Setup (question selection) ---------------- */
+function readQuestions(text) {
+  text = text.trim();
+  if (!text.startsWith('[')) return parseQuestions(text);
+  try { return fromJson(JSON.parse(text)); }
+  catch (err) { throw new Error(`JSON: ${err.message}`); }
+}
+
+function initSetup() {
+  const saved = load(), qText = document.getElementById('qText'), qFile = document.getElementById('qFile');
+  qText.value = saved ? serialize(saved.questions) : SAMPLE;
+  document.getElementById('startGame').onclick = () => {
+    try { newGame(readQuestions(qText.value), saved?.teams.map(t => t.name)); }
+    catch (err) { return alert(err.message); }
+    save();
+    location.hash = 'home';
+  };
+  document.getElementById('importQ').onclick = () => qFile.click();
+  qFile.onchange = async () => {
+    const file = qFile.files[0];
+    qFile.value = '';
+    if (!file) return;
+    try { qText.value = serialize(fromJson(JSON.parse(await file.text()))); }
+    catch (err) { alert(`${file.name}: ${err.message}`); }
+  };
+  document.getElementById('exportQ').onclick = () => {
+    let qs;
+    try { qs = readQuestions(qText.value); } catch (err) { return alert(err.message); }
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([toJson(qs)], { type: 'application/json' }));
+    a.download = 'questions.json';
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  };
+  document.getElementById('resetQ').onclick = () => { qText.value = SAMPLE; };
 }
 
 /* ---------------- Board ---------------- */
@@ -409,9 +424,9 @@ function initBoard() {
 }
 
 /* ---------------- Routing ---------------- */
-const view = ['host', 'board'].includes(location.hash.slice(1)) ? location.hash.slice(1) : 'landing';
+const view = { home: 'landing', host: 'host', board: 'board' }[location.hash.slice(1)] || 'setup';
 document.getElementById(view).hidden = false;
-({ host: initHost, board: initBoard })[view]?.();
+({ setup: initSetup, host: initHost, board: initBoard })[view]?.();
 window.addEventListener('hashchange', () => location.reload());
 </script>
 </body>
