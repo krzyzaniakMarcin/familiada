@@ -71,6 +71,19 @@
   #board .strikes, #board .play::after { content: ''; width: calc(10 * var(--u)); }
   #board .strikes { display: flex; flex-direction: column; align-items: center; font-size: calc(16 * var(--u)); line-height: 1; }
   #waiting { font-size: calc(4 * var(--u)); opacity: .7; text-transform: uppercase; }
+
+  /* Phones: narrow host rows; portrait board puts the team scores on top and the answers full-width below */
+  @media (max-width: 600px) {
+    #host .ans { grid-template-columns: 1.2em minmax(0, 1fr) 2.2em auto; gap: 6px; font-size: 1rem; overflow-wrap: anywhere; }
+    #host .ans button { padding: .5em .6em; }
+  }
+  @media (orientation: portrait) {
+    #board { --u: min(.8vh, .9vw); }
+    #board .screen { grid-template-columns: 1fr 1fr; row-gap: calc(4 * var(--u)); }
+    #board .center { grid-column: 1 / -1; grid-row: 2; }
+    #board .question { max-width: 90vw; }
+    #board .play::after { display: none; }
+  }
 </style>
 </head>
 <body>
