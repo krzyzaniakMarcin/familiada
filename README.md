@@ -8,8 +8,8 @@ One file, no install, no server. Open `index.html` in Chrome, Edge or Firefox.
 4. At the end of a round, click **Award to …** (the bank × round multiplier goes to that team), then **Reveal remaining** and **Next ▶**.
 5. **New game…** on the host view goes back to the questions screen.
 
-Question text format: a blank line between questions, the question on the first line, then one `answer points` per line (up to 8).
-JSON format (`questions.json`): `[{ "question": "...", "answers": [{ "text": "...", "points": 30 }] }]`. **Export JSON** saves the questions from the box.
+Question text format: a blank line between questions, the question on the first line, then one `answer points` per line (up to 8). End the question line with `x2` or `x3` to make that round double or triple points by default (the host can still change it).
+JSON format (`questions.json`): `[{ "question": "...", "multiplier": 2, "answers": [{ "text": "...", "points": 30 }] }]` (`multiplier` is optional, default 1). **Export JSON** saves the questions from the box.
 
 The game state is saved in the browser, so refreshing either window is safe.
 

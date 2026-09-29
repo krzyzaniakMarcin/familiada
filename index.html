@@ -75,7 +75,7 @@
 <main id="setup" hidden>
   <h1>FAMILIADA — questions</h1>
   <p class="hint">One question per block, blank line between questions. First line = question, then one answer per line
-     ending with its points (max 8 answers). You can also paste JSON (same format as questions.json) or use Import JSON….</p>
+     ending with its points (max 8 answers). End the question line with x2 or x3 for double/triple points. You can also paste JSON (same format as questions.json) or use Import JSON….</p>
   <textarea id="qText" spellcheck="false"></textarea>
   <div class="bar">
     <button class="start" id="startGame">Start game ▶</button>
@@ -169,34 +169,37 @@ Funeral 4`;
 
 function checkQuestions(qs) {
   if (!Array.isArray(qs) || !qs.length) throw new Error('No questions found.');
-  return qs.map(({ q, answers }) => {
+  return qs.map(({ q, answers, multiplier = 1 }) => {
     if (typeof q !== 'string' || !q.trim()) throw new Error('Every question needs text.');
+    if (![1, 2, 3].includes(multiplier)) throw new Error(`"${q}": multiplier must be 1, 2 or 3.`);
     if (!Array.isArray(answers) || !answers.length || answers.length > 8) throw new Error(`"${q}" needs 1 to 8 answers.`);
     answers = answers.map(a => {
       if (typeof a?.text !== 'string' || !a.text.trim() || !Number.isFinite(a.points) || a.points < 0)
         throw new Error(`"${q}": every answer needs "text" and non-negative "points".`);
       return { text: a.text.trim(), points: a.points };
     });
-    return { q: q.trim(), answers: answers.sort((a, b) => b.points - a.points) };
+    return { q: q.trim(), multiplier, answers: answers.sort((a, b) => b.points - a.points) };
   });
 }
 
 function parseQuestions(text) {
   if (!text.trim()) throw new Error('No questions found.');
   return checkQuestions(text.trim().split(/\n\s*\n/).map(block => {
-    const [q, ...lines] = block.split('\n').map(l => l.trim()).filter(Boolean);
+    const [first, ...lines] = block.split('\n').map(l => l.trim()).filter(Boolean);
+    const [, q, m] = first.match(/^(.*?)(?:\s+[x×]([123]))?$/i); // "Question x2" = double points
     const answers = lines.map(line => {
       const m = line.match(/^(.+?)\s+(\d+)$/);
       if (!m) throw new Error(`"${line}" should look like: answer text 25`);
       return { text: m[1], points: +m[2] };
     });
-    return { q, answers };
+    return { q, answers, multiplier: m ? +m : 1 };
   }));
 }
 
-// questions.json format: [{ "question": "...", "answers": [{ "text": "...", "points": 30 }] }]
-const fromJson = data => checkQuestions(Array.isArray(data) ? data.map(x => ({ q: x?.question, answers: x?.answers })) : null);
-const toJson = qs => JSON.stringify(qs.map(q => ({ question: q.q, answers: q.answers })), null, 2);
+// questions.json format: [{ "question": "...", "multiplier": 2, "answers": [{ "text": "...", "points": 30 }] }] (multiplier optional, default 1)
+const fromJson = data => checkQuestions(Array.isArray(data)
+  ? data.map(x => ({ q: x?.question, answers: x?.answers, multiplier: x?.multiplier ?? 1 })) : null);
+const toJson = qs => JSON.stringify(qs.map(q => ({ question: q.q, ...(q.multiplier > 1 && { multiplier: q.multiplier }), answers: q.answers })), null, 2);
 
 function load() {
   try { const s = JSON.parse(localStorage.getItem(KEY)); return s && s.questions ? s : null; } catch { return null; }
@@ -214,7 +217,7 @@ function newGame(questions, names = ['Team A', 'Team B']) {
 }
 function startRound(round) {
   Object.assign(state, { round, revealed: state.questions[round].answers.map(() => false),
-                         strikes: 0, bank: 0, multiplier: 1, awarded: false, showQuestion: false });
+                         strikes: 0, bank: 0, multiplier: state.questions[round].multiplier || 1, awarded: false, showQuestion: false });
 }
 function save(eventType) {
   if (eventType) state.event = { type: eventType, n: state.event.n + 1 };
@@ -281,7 +284,7 @@ function renderHost() {
     <div class="bar"><button data-a="newGame">New game…</button></div>`;
 }
 
-const serialize = qs => qs.map(q => [q.q, ...q.answers.map(a => `${a.text} ${a.points}`)].join('\n')).join('\n\n');
+const serialize = qs => qs.map(q => [q.q + (q.multiplier > 1 ? ` x${q.multiplier}` : ''), ...q.answers.map(a => `${a.text} ${a.points}`)].join('\n')).join('\n\n');
 
 function initHost() {
   state = load();
