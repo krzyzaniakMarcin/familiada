@@ -40,6 +40,9 @@
   .lamp i { display: inline-block; width: .7em; height: .7em; margin-right: .6em; border-radius: 50%;
             border: 1px solid var(--dim); background: #221b00; vertical-align: -.05em; }
   .lamp[aria-pressed="true"] i { background: var(--y); border-color: var(--y); box-shadow: 0 0 .5em var(--y); }
+  .i18n { display: inline-grid; }
+  .i18n > * { grid-area: 1 / 1; }
+  .i18n > .off { visibility: hidden; }
   .langs { margin-left: auto; display: flex; gap: 4px; }
   .langs button { padding: .3em .6em; }
   .hint { opacity: .6; font-size: .9rem; }
@@ -72,18 +75,18 @@
 <body>
 
 <main id="setup" hidden>
-  <div class="bar"><h1 data-t="setupTitle"></h1><span class="langs"></span></div>
+  <div class="bar"><h1 data-tt="setupTitle"></h1><span class="langs"></span></div>
   <div class="bar">
-    <label><span data-t="team1"></span> <input class="teamName" maxlength="20" data-tp="teamA"></label>
-    <label><span data-t="team2"></span> <input class="teamName" maxlength="20" data-tp="teamB"></label>
+    <label><span data-tt="team1"></span> <input class="teamName" maxlength="20" data-tp="teamA"></label>
+    <label><span data-tt="team2"></span> <input class="teamName" maxlength="20" data-tp="teamB"></label>
   </div>
   <p class="hint" data-t="setupHint"></p>
   <textarea id="qText" spellcheck="false"></textarea>
   <div class="bar">
-    <button class="start" id="startGame" data-t="start"></button>
-    <button id="importQ" data-t="import"></button>
-    <button id="exportQ" data-t="export"></button>
-    <button id="resetQ" data-t="reset"></button>
+    <button class="start" id="startGame" data-tt="start"></button>
+    <button id="importQ" data-tt="import"></button>
+    <button id="exportQ" data-tt="export"></button>
+    <button id="resetQ" data-tt="reset"></button>
     <input type="file" id="qFile" accept=".json,application/json" hidden>
   </div>
 </main>
@@ -197,11 +200,17 @@ const T = {
 let lang = 'en';
 try { lang = localStorage.getItem(LANG_KEY) || (navigator.language.startsWith('pl') ? 'pl' : 'en'); } catch {}
 if (!T[lang]) lang = 'en';
-const t = (key, ...args) => { const v = T[lang][key]; return typeof v === 'function' ? v(...args) : v; };
+const tIn = (l, key, ...args) => { const v = T[l][key]; return typeof v === 'function' ? v(...args) : v; };
+const t = (key, ...args) => tIn(lang, key, ...args);
+// Stable-width label: every language stacked in one grid cell, only the current one visible,
+// so buttons are as wide as their longest translation and don't shift when switching language.
+const tt = (key, ...args) => `<span class="i18n">${Object.keys(T).map(l =>
+  `<span${l === lang ? '' : ' class="off" aria-hidden="true"'}>${tIn(l, key, ...args)}</span>`).join('')}</span>`;
 
 function applyLanguage() {
   document.documentElement.lang = lang;
   document.querySelectorAll('[data-t]').forEach(el => el.textContent = t(el.dataset.t));
+  document.querySelectorAll('[data-tt]').forEach(el => el.innerHTML = tt(el.dataset.tt));
   document.querySelectorAll('[data-th]').forEach(el => el.innerHTML = t(el.dataset.th));
   document.querySelectorAll('[data-tp]').forEach(el => el.placeholder = t(el.dataset.tp));
   document.querySelectorAll('.langs').forEach(el => el.innerHTML = langSwitch());
@@ -302,13 +311,13 @@ function renderHost() {
   const q = cur(), s = state;
   document.getElementById('hostUi').innerHTML = `
     <div class="bar">
-      <button data-a="openBoard">${t('openBoard')}</button>
-      <span>${t('question', s.round + 1, s.questions.length)}</span>
-      <button data-a="round" data-i="${s.round - 1}" ${s.round === 0 ? 'disabled' : ''}>${t('prev')}</button>
-      <button data-a="round" data-i="${s.round + 1}" ${s.round === s.questions.length - 1 ? 'disabled' : ''}>${t('next')}</button>
-      <span>${t('points')}</span>${[1, 2, 3].map(m =>
+      <button data-a="openBoard">${tt('openBoard')}</button>
+      <span>${tt('question', s.round + 1, s.questions.length)}</span>
+      <button data-a="round" data-i="${s.round - 1}" ${s.round === 0 ? 'disabled' : ''}>${tt('prev')}</button>
+      <button data-a="round" data-i="${s.round + 1}" ${s.round === s.questions.length - 1 ? 'disabled' : ''}>${tt('next')}</button>
+      <span>${tt('points')}</span>${[1, 2, 3].map(m =>
         `<button data-a="mult" data-i="${m}" class="${s.multiplier === m ? 'on' : ''}">${m}</button>`).join('')}
-      <button data-a="toggleQ" class="lamp" aria-pressed="${s.showQuestion}"><i></i>${t('qOnBoard')}</button>
+      <button data-a="toggleQ" class="lamp" aria-pressed="${s.showQuestion}"><i></i>${tt('qOnBoard')}</button>
     </div>
     <div class="panel">
       <h2>${esc(q.q)}</h2>
@@ -319,17 +328,17 @@ function renderHost() {
         </div>`).join('')}
     </div>
     <div class="panel bar">
-      <button class="wrong" data-a="wrong" ${s.strikes >= 3 ? 'disabled' : ''}>${t('wrong')}</button>
+      <button class="wrong" data-a="wrong" ${s.strikes >= 3 ? 'disabled' : ''}>${tt('wrong')}</button>
       <span class="strikes">${'✗'.repeat(s.strikes)}${'·'.repeat(3 - s.strikes)}</span>
-      <button data-a="clearStrikes">${t('clearStrikes')}</button>
+      <button data-a="clearStrikes">${tt('clearStrikes')}</button>
     </div>
     <div class="panel bar">
-      <span class="score">${t('bank')}: ${s.bank * s.multiplier}</span>
-      ${s.teams.map((team, i) => `<button data-a="award" data-i="${i}" ${s.awarded ? 'disabled' : ''}>${t('awardTo', esc(team.name))}</button>`).join('')}
-      <button data-a="revealAll">${t('revealAll')}</button>
+      <span class="score">${tt('bank')}: ${s.bank * s.multiplier}</span>
+      ${s.teams.map((team, i) => `<button data-a="award" data-i="${i}" ${s.awarded ? 'disabled' : ''}>${tt('awardTo', esc(team.name))}</button>`).join('')}
+      <button data-a="revealAll">${tt('revealAll')}</button>
       ${s.awarded ? `<span class="hint">${t('awardedHint')}</span>` : ''}
     </div>
-    <div class="bar"><button data-a="newGame">${t('newGame')}</button><span class="langs">${langSwitch()}</span></div>`;
+    <div class="bar"><button data-a="newGame">${tt('newGame')}</button><span class="langs">${langSwitch()}</span></div>`;
 }
 
 const serialize = qs => qs.map(q => [q.q + (q.multiplier > 1 ? ` x${q.multiplier}` : ''), ...q.answers.map(a => `${a.text} ${a.points}`)].join('\n')).join('\n\n');
