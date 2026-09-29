@@ -244,7 +244,7 @@ function renderHost() {
       <button data-a="round" data-i="${s.round + 1}" ${s.round === s.questions.length - 1 ? 'disabled' : ''}>Next ▶</button>
       <span>Points ×</span>${[1, 2, 3].map(m =>
         `<button data-a="mult" data-i="${m}" class="${s.multiplier === m ? 'on' : ''}">${m}</button>`).join('')}
-      <button data-a="toggleQ" class="${s.showQuestion ? 'on' : ''}">${s.showQuestion ? 'Question shown' : 'Show question on board'}</button>
+      <button data-a="toggleQ" class="${s.showQuestion ? 'on' : ''}">[${s.showQuestion ? 'X' : ' '}] Question on board</button>
     </div>
     <div class="panel">
       <h2>${esc(q.q)}</h2>
