@@ -73,7 +73,11 @@
 <body>
 
 <main id="setup" hidden>
-  <h1>FAMILIADA — questions</h1>
+  <h1>FAMILIADA — setup</h1>
+  <div class="bar">
+    <label>Team 1 <input class="teamName" maxlength="20" placeholder="Team A"></label>
+    <label>Team 2 <input class="teamName" maxlength="20" placeholder="Team B"></label>
+  </div>
   <p class="hint">One question per block, blank line between questions. First line = question, then one answer per line
      ending with its points (max 8 answers). End the question line with x2 or x3 for double/triple points. You can also paste JSON (same format as questions.json) or use Import JSON….</p>
   <textarea id="qText" spellcheck="false"></textarea>
@@ -314,8 +318,10 @@ function readQuestions(text) {
 function initSetup() {
   const saved = load(), qText = document.getElementById('qText'), qFile = document.getElementById('qFile');
   qText.value = saved ? serialize(saved.questions) : SAMPLE;
+  const nameInputs = [...document.querySelectorAll('#setup .teamName')];
+  nameInputs.forEach((el, i) => el.value = saved?.teams[i].name ?? el.placeholder);
   document.getElementById('startGame').onclick = () => {
-    try { newGame(readQuestions(qText.value), saved?.teams.map(t => t.name)); }
+    try { newGame(readQuestions(qText.value), nameInputs.map(el => el.value.trim() || el.placeholder)); }
     catch (err) { return alert(err.message); }
     save();
     location.hash = 'home';
