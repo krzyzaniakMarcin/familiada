@@ -210,7 +210,7 @@ function startRound(round) {
 function save(eventType) {
   if (eventType) state.event = { type: eventType, n: state.event.n + 1 };
   localStorage.setItem(KEY, JSON.stringify(state));
-  if (view === 'host') { renderHost(); sounds[eventType]?.(); }
+  if (view === 'host') { renderHost(); if (eventType) playSound(eventType); }
 }
 
 const act = {
@@ -349,6 +349,15 @@ const sounds = {
   strike: () => { tone(140, 0, .8, 'square', .15); tone(147, 0, .8, 'sawtooth', .12); },
   award: () => [523, 659, 784, 1047].forEach((f, i) => tone(f, i * .12, .35, 'triangle')),
 };
+
+// Your own recordings in sounds/<type>.mp3 (reveal, strike, award) win; missing files fall back to the synth above.
+const soundFiles = {};
+function playSound(type) {
+  const a = soundFiles[type] ??= new Audio(`sounds/${type}.mp3`);
+  if (a.error) return sounds[type]?.();
+  a.currentTime = 0;
+  a.play().catch(() => sounds[type]?.());
+}
 
 /* ---------------- Board ---------------- */
 let prev = null;
