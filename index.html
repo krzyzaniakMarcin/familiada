@@ -22,15 +22,6 @@
   input, select, textarea { font: inherit; padding: .4em; border-radius: 0; border: 1px solid var(--dim); background: #000; color: var(--y); }
   [hidden] { display: none !important; }
 
-  /* Landing */
-  #landing { display: grid; place-items: center; text-align: center; min-height: 100vh; padding: 16px; }
-  #landing h1 { font-size: clamp(3rem, 11vw, 8rem); margin: 0; letter-spacing: .05em; }
-  #landing a { display: inline-block; margin: .5em; padding: .8em 1.6em; font-size: 1.3rem; color: var(--y);
-               border: 2px solid var(--y); text-decoration: none; text-transform: uppercase; }
-  #landing a:hover { background: var(--y); color: #000; }
-  #landing a.back { border: 0; font-size: 1rem; }
-  #landing p { max-width: 36em; line-height: 1.5; opacity: .8; }
-
   /* Setup + Host */
   #setup, #host { max-width: 1000px; margin: 0 auto; padding: 16px; }
   .bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 12px; }
@@ -87,17 +78,6 @@
     <button id="exportQ">Export JSON</button>
     <button id="resetQ">Restore sample questions</button>
     <input type="file" id="qFile" accept=".json,application/json" hidden>
-  </div>
-</main>
-
-<main id="landing" hidden>
-  <div>
-    <h1>FAMILIADA</h1>
-    <p>Family Feud for parties. Open the <b>Host view</b> on your laptop, then open the <b>Board</b> and drag that window
-       to the TV / projector. Double-click the board (or press F) for fullscreen; the first click also enables sounds.</p>
-    <a href="#host">Host view</a>
-    <a href="#board" target="_blank">Board (TV)</a>
-    <p><a class="back" href="#setup">← Change questions</a></p>
   </div>
 </main>
 
@@ -258,7 +238,7 @@ function renderHost() {
   const q = cur(), s = state;
   document.getElementById('hostUi').innerHTML = `
     <div class="bar">
-      <button data-a="openBoard">📺 Open board window</button>
+      <button data-a="openBoard">📺 Open board</button>
       <span>Question ${s.round + 1} / ${s.questions.length}</span>
       <button data-a="round" data-i="${s.round - 1}" ${s.round === 0 ? 'disabled' : ''}>◀ Prev</button>
       <button data-a="round" data-i="${s.round + 1}" ${s.round === s.questions.length - 1 ? 'disabled' : ''}>Next ▶</button>
@@ -324,7 +304,8 @@ function initSetup() {
     try { newGame(readQuestions(qText.value), nameInputs.map(el => el.value.trim() || el.placeholder)); }
     catch (err) { return alert(err.message); }
     save();
-    location.hash = 'home';
+    act.openBoard(); // inside the click handler, so the popup is not blocked
+    location.hash = 'host';
   };
   document.getElementById('importQ').onclick = () => qFile.click();
   qFile.onchange = async () => {
@@ -412,7 +393,7 @@ function initBoard() {
 }
 
 /* ---------------- Routing ---------------- */
-const view = { home: 'landing', host: 'host', board: 'board' }[location.hash.slice(1)] || 'setup';
+const view = { host: 'host', board: 'board' }[location.hash.slice(1)] || 'setup';
 document.getElementById(view).hidden = false;
 ({ setup: initSetup, host: initHost, board: initBoard })[view]?.();
 window.addEventListener('hashchange', () => location.reload());
