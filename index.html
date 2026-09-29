@@ -1,0 +1,378 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Familiada</title>
+<style>
+  :root { --blue: #0b1f6e; --deep: #020824; --gold: #f5c542; --red: #e0262b; --green: #2fa84f; --text: #fff; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: "Arial Black", "Helvetica Neue", Arial, sans-serif; color: var(--text);
+         background: radial-gradient(ellipse at center, #13308f 0%, var(--deep) 75%); min-height: 100vh; }
+  button { font: inherit; cursor: pointer; border: 2px solid var(--gold); border-radius: 8px; background: var(--blue);
+           color: var(--text); padding: .5em 1em; }
+  button:hover:not(:disabled) { filter: brightness(1.3); }
+  button:disabled { opacity: .4; cursor: default; }
+  button.on { background: var(--gold); color: var(--deep); }
+  input, select, textarea { font: 16px Arial, sans-serif; padding: .4em; border-radius: 6px; border: 1px solid #889; }
+  [hidden] { display: none !important; }
+
+  /* Landing */
+  #landing { display: grid; place-items: center; text-align: center; min-height: 100vh; padding: 16px; }
+  #landing h1 { font-size: clamp(3rem, 10vw, 7rem); color: var(--gold); margin: 0; text-shadow: 0 6px 0 #7a5a00; }
+  #landing a { display: inline-block; margin: .5em; padding: .8em 1.6em; font-size: 1.4rem; color: var(--deep);
+               background: var(--gold); border-radius: 12px; text-decoration: none; }
+  #landing p { font-family: Arial, sans-serif; opacity: .8; max-width: 36em; line-height: 1.5; }
+
+  /* Host */
+  #host { max-width: 1000px; margin: 0 auto; padding: 16px; font-family: Arial, sans-serif; }
+  #host .bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 12px; }
+  #host h2 { color: var(--gold); margin: .4em 0; }
+  #host .panel { background: rgba(0,0,0,.35); border: 1px solid #334; border-radius: 10px; padding: 12px; margin-bottom: 12px; }
+  #host .ans { display: grid; grid-template-columns: 2em 1fr 3em 9em; gap: 8px; align-items: center; padding: 6px 0;
+               border-bottom: 1px solid #223; font-size: 1.2rem; }
+  #host .ans.done { opacity: .45; }
+  #host .ans b { color: var(--gold); }
+  #host .ok { background: var(--green); border-color: #7f7; font-weight: bold; }
+  #host .wrong { background: var(--red); border-color: #f99; font-size: 1.5rem; font-weight: bold; padding: .5em 1.5em; }
+  #host .strikes { font-size: 2rem; color: var(--red); letter-spacing: .2em; min-width: 4em; }
+  #host .teams { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  #host .score { font-size: 2rem; color: var(--gold); font-weight: bold; }
+  #host textarea { width: 100%; height: 300px; }
+  #host .hint { opacity: .6; font-size: .9rem; }
+
+  /* Board */
+  #board { height: 100vh; display: flex; flex-direction: column; padding: 2vh 3vw; gap: 2vh; overflow: hidden; }
+  #board .top { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 2vw; }
+  #board .team { text-align: center; }
+  #board .team .name { font-size: 3.5vh; text-transform: uppercase; }
+  #board .team .pts, #board .bank { font-size: 8vh; color: var(--gold); background: var(--deep); border: .5vh solid var(--gold);
+                                    border-radius: 1.5vh; padding: 0 3vh; display: inline-block; min-width: 3.5em; text-align: center; }
+  #board .bank small { font-size: .45em; color: #fff; }
+  #board .question { text-align: center; font-size: 4.5vh; min-height: 1.2em; }
+  #board .grid { flex: 1; display: grid; grid-template-columns: 1fr 1fr; grid-auto-flow: column; grid-template-rows: repeat(4, 1fr);
+                 gap: 1.5vh 2vw; border: .8vh solid var(--gold); border-radius: 3vh; padding: 2.5vh; background: rgba(0,0,0,.4); }
+  #board .slot { perspective: 800px; }
+  #board .slot > div { height: 100%; display: flex; align-items: center; justify-content: center; border: .4vh solid #6c86ff;
+                       border-radius: 1vh; background: linear-gradient(#2446c7, #0b1f6e); font-size: 5vh; }
+  #board .slot .num { width: 1.8em; height: 1.4em; border-radius: 50%; background: var(--deep); border: .3vh solid var(--gold);
+                      display: grid; place-items: center; color: var(--gold); }
+  #board .slot.open > div { justify-content: space-between; padding-left: 2vw; background: linear-gradient(#fff, #cfd8ff);
+                            color: var(--deep); text-transform: uppercase; font-size: 4.2vh; }
+  #board .slot.open .p { align-self: stretch; display: grid; place-items: center; min-width: 2.4em; background: var(--blue);
+                         color: #fff; font-size: 5vh; }
+  #board .slot.empty > div { background: rgba(11,31,110,.4); border-color: #223a99; }
+  #board .slot.flip > div { animation: flip .6s ease-out; }
+  @keyframes flip { from { transform: rotateX(90deg); } to { transform: rotateX(0); } }
+  #strike { position: fixed; inset: 0; display: flex; justify-content: center; align-items: center; gap: 4vw; pointer-events: none; }
+  #strike span { font-size: 40vh; line-height: 1; color: var(--red); border: 2vh solid var(--red); border-radius: 3vh;
+                 padding: 0 4vh; background: rgba(0,0,0,.6); animation: pop .25s ease-out; }
+  @keyframes pop { from { transform: scale(2); opacity: 0; } }
+  #start { position: fixed; inset: 0; background: rgba(0,0,0,.75); font-size: 4vh; border: 0; border-radius: 0; z-index: 2; }
+  #waiting { margin: auto; font-size: 4vh; opacity: .7; }
+</style>
+</head>
+<body>
+
+<main id="landing" hidden>
+  <div>
+    <h1>FAMILIADA</h1>
+    <p>Family Feud for parties. Open the <b>Host view</b> on your laptop, then open the <b>Board</b> and drag that window
+       to the TV / projector. Click the board once to go fullscreen and enable sounds.</p>
+    <a href="#host">Host view</a>
+    <a href="#board" target="_blank">Board (TV)</a>
+  </div>
+</main>
+
+<main id="host" hidden>
+  <div id="hostUi"></div>
+  <details class="panel">
+    <summary>Edit questions</summary>
+    <p class="hint">One question per block, blank line between questions. First line = question, then one answer per line
+       ending with its points (max 8 answers). Loading questions starts a new game (team names are kept).</p>
+    <textarea id="qText" spellcheck="false"></textarea>
+    <div class="bar">
+      <button id="loadQ">Load questions</button>
+      <button id="resetQ">Restore sample questions</button>
+    </div>
+  </details>
+  <p class="hint">Shortcuts: <b>1–8</b> reveal answer · <b>X</b> wrong answer.</p>
+</main>
+
+<main id="board" hidden>
+  <div id="waiting">Open the host view to start…</div>
+  <div class="top" hidden>
+    <div class="team"><div class="name"></div><div class="pts"></div></div>
+    <div class="bank"></div>
+    <div class="team"><div class="name"></div><div class="pts"></div></div>
+  </div>
+  <div class="question" hidden></div>
+  <div class="grid" hidden></div>
+  <div id="strike" hidden></div>
+  <button id="start">Click to start (fullscreen + sound)</button>
+</main>
+
+<script>
+const KEY = 'familiada-state';
+const SAMPLE = `Name something people bring to a party
+Drinks 30
+Snacks 24
+Gift 15
+Friend 11
+Dessert 8
+Music 5
+Games 4
+
+Name a reason you might be late to work
+Traffic 38
+Overslept 27
+Kids 12
+Car trouble 10
+Weather 6
+Public transport 4
+
+Name something you do right after waking up
+Check phone 34
+Bathroom 25
+Brush teeth 14
+Coffee 12
+Shower 8
+Stretch 4
+
+Name a popular pizza topping
+Pepperoni 36
+Mushrooms 18
+Cheese 14
+Sausage 11
+Ham 8
+Pineapple 7
+Olives 4
+
+Name something people are afraid of
+Spiders 31
+Heights 22
+Snakes 17
+Death 10
+Clowns 9
+Public speaking 7
+
+Name a place where you have to be quiet
+Library 45
+Church 20
+Hospital 12
+Cinema 10
+Exam room 7
+Funeral 4`;
+
+function parseQuestions(text) {
+  if (!text.trim()) throw new Error('No questions found.');
+  return text.trim().split(/\n\s*\n/).map(block => {
+    const [q, ...lines] = block.split('\n').map(l => l.trim()).filter(Boolean);
+    const answers = lines.map(line => {
+      const m = line.match(/^(.+?)\s+(\d+)$/);
+      if (!m) throw new Error(`"${line}" should look like: answer text 25`);
+      return { text: m[1], points: +m[2] };
+    }).sort((a, b) => b.points - a.points);
+    if (!answers.length || answers.length > 8) throw new Error(`"${q}" needs 1 to 8 answers.`);
+    return { q, answers };
+  });
+}
+
+function load() {
+  try { const s = JSON.parse(localStorage.getItem(KEY)); return s && s.questions ? s : null; } catch { return null; }
+}
+
+const esc = s => String(s).replace(/[&<>"']/g, c => `&#${c.charCodeAt(0)};`);
+
+/* ---------------- Host ---------------- */
+let state;
+const cur = () => state.questions[state.round];
+
+function newGame(questions, names = ['Team A', 'Team B']) {
+  state = { teams: names.map(name => ({ name, score: 0 })), questions, event: { type: null, n: 0 } };
+  startRound(0);
+}
+function startRound(round) {
+  Object.assign(state, { round, revealed: state.questions[round].answers.map(() => false),
+                         strikes: 0, bank: 0, multiplier: 1, awarded: false, showQuestion: false });
+}
+function save(eventType) {
+  if (eventType) state.event = { type: eventType, n: state.event.n + 1 };
+  localStorage.setItem(KEY, JSON.stringify(state));
+  renderHost();
+}
+
+const act = {
+  reveal(i) {
+    if (i >= state.revealed.length || state.revealed[i]) return;
+    state.revealed[i] = true;
+    if (!state.awarded) state.bank += cur().answers[i].points;
+    save('reveal');
+  },
+  wrong() { state.strikes = Math.min(3, state.strikes + 1); save('strike'); },
+  clearStrikes() { state.strikes = 0; save(); },
+  award(t) {
+    if (state.awarded) return;
+    state.teams[t].score += state.bank * state.multiplier;
+    state.bank = 0; state.awarded = true;
+    save('award');
+  },
+  revealAll() { state.revealed.fill(true); save(); },
+  mult(m) { state.multiplier = m; save(); },
+  round(r) { if (r >= 0 && r < state.questions.length) { startRound(r); save(); } },
+  toggleQ() { state.showQuestion = !state.showQuestion; save(); },
+  adjust(t, d) { state.teams[t].score += d; save(); },
+  openBoard() { window.open(location.href.split('#')[0] + '#board', 'familiada-board', 'popup,width=1280,height=720'); },
+  newGame() {
+    if (confirm('Reset scores and start from round 1?')) { newGame(state.questions, state.teams.map(t => t.name)); save(); }
+  },
+};
+
+function renderHost() {
+  const q = cur(), s = state;
+  document.getElementById('hostUi').innerHTML = `
+    <div class="bar">
+      <button data-a="openBoard">📺 Open board window</button>
+      <select id="roundSel">${s.questions.map((x, i) =>
+        `<option value="${i}" ${i === s.round ? 'selected' : ''}>Round ${i + 1}: ${esc(x.q)}</option>`).join('')}</select>
+      <button data-a="round" data-i="${s.round - 1}" ${s.round === 0 ? 'disabled' : ''}>◀ Prev</button>
+      <button data-a="round" data-i="${s.round + 1}" ${s.round === s.questions.length - 1 ? 'disabled' : ''}>Next ▶</button>
+      <span>Points ×</span>${[1, 2, 3].map(m =>
+        `<button data-a="mult" data-i="${m}" class="${s.multiplier === m ? 'on' : ''}">${m}</button>`).join('')}
+      <button data-a="toggleQ" class="${s.showQuestion ? 'on' : ''}">${s.showQuestion ? 'Question shown' : 'Show question on board'}</button>
+    </div>
+    <div class="panel">
+      <h2>${esc(q.q)}</h2>
+      ${q.answers.map((a, i) => `
+        <div class="ans ${s.revealed[i] ? 'done' : ''}">
+          <b>${i + 1}</b><span>${esc(a.text)}</span><b>${a.points}</b>
+          <button class="ok" data-a="reveal" data-i="${i}" ${s.revealed[i] ? 'disabled' : ''}>${s.revealed[i] ? 'Revealed' : '✓ Correct'}</button>
+        </div>`).join('')}
+    </div>
+    <div class="panel bar">
+      <button class="wrong" data-a="wrong" ${s.strikes >= 3 ? 'disabled' : ''}>✗ WRONG</button>
+      <span class="strikes">${'✗'.repeat(s.strikes)}${'·'.repeat(3 - s.strikes)}</span>
+      <button data-a="clearStrikes">Clear strikes</button>
+    </div>
+    <div class="panel bar">
+      <span class="score">Bank: ${s.bank}${s.multiplier > 1 ? ` × ${s.multiplier} = ${s.bank * s.multiplier}` : ''}</span>
+      ${s.teams.map((t, i) => `<button data-a="award" data-i="${i}" ${s.awarded ? 'disabled' : ''}>Award to ${esc(t.name)}</button>`).join('')}
+      <button data-a="revealAll">Reveal remaining (no points)</button>
+      ${s.awarded ? '<span class="hint">Round awarded — further reveals add no points.</span>' : ''}
+    </div>
+    <div class="teams">${s.teams.map((t, i) => `
+      <div class="panel">
+        <input class="teamName" data-i="${i}" value="${esc(t.name)}" aria-label="Team ${i + 1} name">
+        <div class="bar"><span class="score">${t.score}</span>
+          <button data-a="adjust" data-i="${i}" data-d="-5">−5</button>
+          <button data-a="adjust" data-i="${i}" data-d="5">+5</button></div>
+      </div>`).join('')}
+    </div>
+    <div class="bar"><button data-a="newGame">New game (reset scores)</button></div>`;
+}
+
+const serialize = qs => qs.map(q => [q.q, ...q.answers.map(a => `${a.text} ${a.points}`)].join('\n')).join('\n\n');
+
+function initHost() {
+  state = load();
+  if (!state) { newGame(parseQuestions(SAMPLE)); }
+  save();
+  const ui = document.getElementById('hostUi'), qText = document.getElementById('qText');
+  qText.value = serialize(state.questions);
+  ui.addEventListener('click', e => {
+    const b = e.target.closest('[data-a]');
+    if (!b) return;
+    b.dataset.a === 'adjust' ? act.adjust(+b.dataset.i, +b.dataset.d) : act[b.dataset.a](+b.dataset.i);
+  });
+  ui.addEventListener('change', e => {
+    if (e.target.id === 'roundSel') act.round(+e.target.value);
+    if (e.target.classList.contains('teamName')) { state.teams[+e.target.dataset.i].name = e.target.value.trim() || 'Team'; save(); }
+  });
+  document.getElementById('loadQ').onclick = () => {
+    try { newGame(parseQuestions(qText.value), state.teams.map(t => t.name)); save(); qText.value = serialize(state.questions); }
+    catch (err) { alert(err.message); }
+  };
+  document.getElementById('resetQ').onclick = () => { qText.value = SAMPLE; };
+  document.addEventListener('keydown', e => {
+    if (e.target.matches('input, textarea, select') || e.metaKey || e.ctrlKey || e.altKey) return;
+    if (e.key >= '1' && e.key <= '8') act.reveal(+e.key - 1);
+    if (e.key.toLowerCase() === 'x' && state.strikes < 3) act.wrong();
+  });
+}
+
+/* ---------------- Board ---------------- */
+let audio, lastN = null, prev = null, strikeTimer;
+
+function tone(freq, at, dur, type = 'sine', vol = 0.2) {
+  if (!audio) return;
+  const o = audio.createOscillator(), g = audio.createGain(), t = audio.currentTime + at;
+  o.type = type; o.frequency.value = freq;
+  g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+  o.connect(g).connect(audio.destination); o.start(t); o.stop(t + dur);
+}
+const sounds = {
+  reveal: () => { tone(880, 0, .3); tone(1320, .12, .6); },
+  strike: () => { tone(140, 0, .8, 'square', .15); tone(147, 0, .8, 'sawtooth', .12); },
+  award: () => [523, 659, 784, 1047].forEach((f, i) => tone(f, i * .12, .35, 'triangle')),
+};
+
+function renderBoard() {
+  const s = load(), $ = sel => document.querySelector('#board ' + sel);
+  $('#waiting').hidden = !!s;
+  ['.top', '.grid'].forEach(sel => $(sel).hidden = !s);
+  if (!s) return;
+  const q = s.questions[s.round];
+  document.querySelectorAll('#board .team').forEach((el, i) => {
+    el.querySelector('.name').textContent = s.teams[i].name;
+    el.querySelector('.pts').textContent = s.teams[i].score;
+  });
+  $('.bank').innerHTML = s.bank + (s.multiplier > 1 ? ` <small>×${s.multiplier}</small>` : '');
+  $('.question').hidden = !s.showQuestion;
+  $('.question').textContent = q.q;
+
+  const sameRound = prev && prev.round === s.round && prev.q === q.q;
+  $('.grid').innerHTML = Array.from({ length: 8 }, (_, i) => {
+    const a = q.answers[i];
+    if (!a) return '<div class="slot empty"><div></div></div>';
+    if (!s.revealed[i]) return `<div class="slot"><div><span class="num">${i + 1}</span></div></div>`;
+    const flip = sameRound && !prev.revealed[i] ? ' flip' : '';
+    return `<div class="slot open${flip}"><div><span>${esc(a.text)}</span><span class="p">${a.points}</span></div></div>`;
+  }).join('');
+  prev = { round: s.round, q: q.q, revealed: s.revealed };
+
+  if (lastN !== null && s.event.n !== lastN) {
+    sounds[s.event.type]?.();
+    if (s.event.type === 'strike') {
+      const box = $('#strike');
+      box.innerHTML = '<span>✗</span>'.repeat(s.strikes);
+      box.hidden = false;
+      clearTimeout(strikeTimer);
+      strikeTimer = setTimeout(() => box.hidden = true, 1300);
+    }
+  }
+  lastN = s.event.n;
+}
+
+function toggleFullscreen() {
+  document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen?.().catch(() => {});
+}
+
+function initBoard() {
+  renderBoard();
+  window.addEventListener('storage', e => { if (e.key === KEY) renderBoard(); });
+  document.getElementById('start').onclick = e => {
+    audio = new (window.AudioContext || window.webkitAudioContext)();
+    toggleFullscreen();
+    e.currentTarget.hidden = true;
+  };
+  document.addEventListener('keydown', e => { if (e.key.toLowerCase() === 'f') toggleFullscreen(); });
+}
+
+/* ---------------- Routing ---------------- */
+const view = ['host', 'board'].includes(location.hash.slice(1)) ? location.hash.slice(1) : 'landing';
+document.getElementById(view).hidden = false;
+({ host: initHost, board: initBoard })[view]?.();
+window.addEventListener('hashchange', () => location.reload());
+</script>
+</body>
+</html>
