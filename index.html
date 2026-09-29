@@ -52,7 +52,9 @@
   #board .center { display: flex; flex-direction: column; align-items: center; gap: calc(2 * var(--u)); }
   #board .question { font-size: calc(3.6 * var(--u)); max-width: 55vw; text-align: center; text-transform: uppercase;
                     height: 2.4em; line-height: 1.2; overflow: hidden; display: flex; align-items: center; } /* fixed 2-line slot */
-  #board .rows { display: grid; grid-template-columns: auto 16ch 3ch; column-gap: 1ch; line-height: 1.2; text-transform: uppercase; }
+  /* Fixed size with room for 8 answers + SUMA, so nothing moves when a question has fewer answers */
+  #board .rows { display: grid; grid-template-columns: auto 16ch 3ch; grid-auto-rows: 1.2em; align-content: start; column-gap: 1ch;
+                 font-size: calc(6 * var(--u)); height: calc(9 * 1.2em + .3em); text-transform: uppercase; }
   #board .t { white-space: nowrap; overflow: hidden; }
   #board .blank { transform: translateY(-.35em); } /* lift baseline dots to mid-height so rows look evenly spaced */
   #board .p { text-align: right; }
@@ -377,8 +379,7 @@ function renderBoard() {
   $('.question').textContent = q.q;
 
   const sameRound = prev && prev.round === s.round && prev.q === q.q;
-  const rows = $('.rows'), n = q.answers.length;
-  rows.style.fontSize = `calc(${Math.min(6.5, 56 / ((n + 1) * 1.2))} * var(--u))`;
+  const rows = $('.rows');
   rows.innerHTML = q.answers.map((a, i) => {
     if (!s.revealed[i]) return `<span>${i + 1}</span><span class="t blank">${'.'.repeat(16)}</span><span class="p">--</span>`;
     const cls = sameRound && !prev.revealed[i] ? ' new' : '';
