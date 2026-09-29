@@ -94,6 +94,9 @@
     <div class="bar">
       <button id="loadQ">Load questions</button>
       <button id="resetQ">Restore sample questions</button>
+      <button id="importQ">Import JSON…</button>
+      <button id="exportQ">Export JSON</button>
+      <input type="file" id="qFile" accept=".json,application/json" hidden>
     </div>
   </details>
   <p class="hint">Shortcuts: <b>1–8</b> reveal answer · <b>X</b> wrong answer.</p>
@@ -164,19 +167,36 @@ Cinema 10
 Exam room 7
 Funeral 4`;
 
+function checkQuestions(qs) {
+  if (!Array.isArray(qs) || !qs.length) throw new Error('No questions found.');
+  return qs.map(({ q, answers }) => {
+    if (typeof q !== 'string' || !q.trim()) throw new Error('Every question needs text.');
+    if (!Array.isArray(answers) || !answers.length || answers.length > 8) throw new Error(`"${q}" needs 1 to 8 answers.`);
+    answers = answers.map(a => {
+      if (typeof a?.text !== 'string' || !a.text.trim() || !Number.isFinite(a.points) || a.points < 0)
+        throw new Error(`"${q}": every answer needs "text" and non-negative "points".`);
+      return { text: a.text.trim(), points: a.points };
+    });
+    return { q: q.trim(), answers: answers.sort((a, b) => b.points - a.points) };
+  });
+}
+
 function parseQuestions(text) {
   if (!text.trim()) throw new Error('No questions found.');
-  return text.trim().split(/\n\s*\n/).map(block => {
+  return checkQuestions(text.trim().split(/\n\s*\n/).map(block => {
     const [q, ...lines] = block.split('\n').map(l => l.trim()).filter(Boolean);
     const answers = lines.map(line => {
       const m = line.match(/^(.+?)\s+(\d+)$/);
       if (!m) throw new Error(`"${line}" should look like: answer text 25`);
       return { text: m[1], points: +m[2] };
-    }).sort((a, b) => b.points - a.points);
-    if (!answers.length || answers.length > 8) throw new Error(`"${q}" needs 1 to 8 answers.`);
+    });
     return { q, answers };
-  });
+  }));
 }
+
+// questions.json format: [{ "question": "...", "answers": [{ "text": "...", "points": 30 }] }]
+const fromJson = data => checkQuestions(Array.isArray(data) ? data.map(x => ({ q: x?.question, answers: x?.answers })) : null);
+const toJson = qs => JSON.stringify(qs.map(q => ({ question: q.q, answers: q.answers })), null, 2);
 
 function load() {
   try { const s = JSON.parse(localStorage.getItem(KEY)); return s && s.questions ? s : null; } catch { return null; }
@@ -288,9 +308,29 @@ function initHost() {
     if (e.target.id === 'roundSel') act.round(+e.target.value);
     if (e.target.classList.contains('teamName')) { state.teams[+e.target.dataset.i].name = e.target.value.trim() || 'Team'; save(); }
   });
-  document.getElementById('loadQ').onclick = () => {
-    try { newGame(parseQuestions(qText.value), state.teams.map(t => t.name)); save(); qText.value = serialize(state.questions); }
+  const loadQuestions = parse => {
+    try { newGame(parse(), state.teams.map(t => t.name)); save(); qText.value = serialize(state.questions); }
     catch (err) { alert(err.message); }
+  };
+  document.getElementById('loadQ').onclick = () => loadQuestions(() => parseQuestions(qText.value));
+  const qFile = document.getElementById('qFile');
+  document.getElementById('importQ').onclick = () => qFile.click();
+  qFile.onchange = async () => {
+    const file = qFile.files[0];
+    qFile.value = '';
+    if (!file) return;
+    const text = await file.text();
+    loadQuestions(() => {
+      try { return fromJson(JSON.parse(text)); }
+      catch (err) { throw new Error(`${file.name}: ${err.message}`); }
+    });
+  };
+  document.getElementById('exportQ').onclick = () => {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([toJson(state.questions)], { type: 'application/json' }));
+    a.download = 'questions.json';
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
   };
   document.getElementById('resetQ').onclick = () => { qText.value = SAMPLE; };
   document.addEventListener('keydown', e => {
