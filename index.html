@@ -56,7 +56,6 @@
   #board .box { display: inline-block; min-width: 3.4ch; padding: 0 .3ch; text-align: right; font-size: calc(10 * var(--u)); line-height: 1.2;
                 border: calc(.3 * var(--u)) solid #2b2b2b; background: #0a0a0a; }
   #board .center { display: flex; flex-direction: column; align-items: center; gap: calc(2 * var(--u)); }
-  #board .bank small { font-size: .5em; }
   #board .question { font-size: calc(3.6 * var(--u)); max-width: 55vw; text-align: center; text-transform: uppercase; }
   #board .rows { display: grid; grid-template-columns: auto 16ch 3ch; column-gap: 1ch; line-height: 1.2; text-transform: uppercase; }
   #board .t { white-space: nowrap; overflow: hidden; }
@@ -280,7 +279,7 @@ function renderHost() {
       <button data-a="clearStrikes">Clear strikes</button>
     </div>
     <div class="panel bar">
-      <span class="score">Bank: ${s.bank}${s.multiplier > 1 ? ` × ${s.multiplier} = ${s.bank * s.multiplier}` : ''}</span>
+      <span class="score">Bank: ${s.bank * s.multiplier}</span>
       ${s.teams.map((t, i) => `<button data-a="award" data-i="${i}" ${s.awarded ? 'disabled' : ''}>Award to ${esc(t.name)}</button>`).join('')}
       <button data-a="revealAll">Reveal remaining (no points)</button>
       ${s.awarded ? '<span class="hint">Round awarded — further reveals add no points.</span>' : ''}
@@ -372,7 +371,7 @@ function renderBoard() {
     el.querySelector('.name').textContent = s.teams[i].name;
     el.querySelector('.pts').textContent = s.teams[i].score;
   });
-  $('.bank').innerHTML = s.bank + (s.multiplier > 1 ? `<small>×${s.multiplier}</small>` : '');
+  $('.bank').textContent = s.bank * s.multiplier;
   $('.question').hidden = !s.showQuestion;
   $('.question').textContent = q.q;
 
@@ -382,9 +381,9 @@ function renderBoard() {
   rows.innerHTML = q.answers.map((a, i) => {
     if (!s.revealed[i]) return `<span>${i + 1}</span><span class="t">${'.'.repeat(16)}</span><span class="p">--</span>`;
     const cls = sameRound && !prev.revealed[i] ? ' new' : '';
-    return `<span>${i + 1}</span><span class="t${cls}">${esc(a.text)}</span><span class="p${cls}">${a.points}</span>`;
+    return `<span>${i + 1}</span><span class="t${cls}">${esc(a.text)}</span><span class="p${cls}">${a.points * s.multiplier}</span>`;
   }).join('') + `<span></span><span class="suma">SUMA</span><span class="p suma">${
-    q.answers.reduce((sum, a, i) => sum + (s.revealed[i] ? a.points : 0), 0)}</span>`;
+    q.answers.reduce((sum, a, i) => sum + (s.revealed[i] ? a.points * s.multiplier : 0), 0)}</span>`;
   const newStrike = sameRound && s.strikes > prev.strikes;
   $('.strikes').innerHTML = Array.from({ length: s.strikes }, (_, i) =>
     `<span${newStrike && i === s.strikes - 1 ? ' class="new"' : ''}>X</span>`).join('');
