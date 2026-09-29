@@ -63,6 +63,7 @@
   },
   {
     "question": "Name something you do right after waking up",
+    "multiplier": 2,
     "answers": [
       {
         "text": "Check phone",
@@ -92,6 +93,7 @@
   },
   {
     "question": "Name a popular pizza topping",
+    "multiplier": 2,
     "answers": [
       {
         "text": "Pepperoni",
@@ -125,6 +127,7 @@
   },
   {
     "question": "Name something people are afraid of",
+    "multiplier": 3,
     "answers": [
       {
         "text": "Spiders",
@@ -154,6 +157,7 @@
   },
   {
     "question": "Name a place where you have to be quiet",
+    "multiplier": 3,
     "answers": [
       {
         "text": "Library",
