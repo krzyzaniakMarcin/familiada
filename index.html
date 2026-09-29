@@ -80,7 +80,7 @@
     <label><span data-tt="team1"></span> <input class="teamName" maxlength="20" data-tp="teamA"></label>
     <label><span data-tt="team2"></span> <input class="teamName" maxlength="20" data-tp="teamB"></label>
   </div>
-  <p class="hint" data-t="setupHint"></p>
+  <p class="hint" data-tt="setupHint"></p>
   <textarea id="qText" spellcheck="false"></textarea>
   <div class="bar">
     <button class="start" id="startGame" data-tt="start"></button>
@@ -93,7 +93,7 @@
 
 <main id="host" hidden>
   <div id="hostUi"></div>
-  <p class="hint" data-th="shortcuts"></p>
+  <p class="hint" data-tt="shortcuts"></p>
 </main>
 
 <main id="board" hidden>
@@ -211,17 +211,24 @@ function applyLanguage() {
   document.documentElement.lang = lang;
   document.querySelectorAll('[data-t]').forEach(el => el.textContent = t(el.dataset.t));
   document.querySelectorAll('[data-tt]').forEach(el => el.innerHTML = tt(el.dataset.tt));
-  document.querySelectorAll('[data-th]').forEach(el => el.innerHTML = t(el.dataset.th));
   document.querySelectorAll('[data-tp]').forEach(el => el.placeholder = t(el.dataset.tp));
   document.querySelectorAll('.langs').forEach(el => el.innerHTML = langSwitch());
 }
 const langSwitch = () => Object.keys(T).map(l =>
   `<button data-lang="${l}" class="${l === lang ? 'on' : ''}">${l.toUpperCase()}</button>`).join('');
+// Switch in place (no reload, so nothing flickers); the board window follows via the storage event.
+function setLanguage(l) {
+  if (!T[l] || l === lang) return;
+  lang = l;
+  applyLanguage();
+  if (view === 'host') renderHost();
+  if (view === 'board') renderBoard();
+}
 document.addEventListener('click', e => {
   const b = e.target.closest('[data-lang]');
-  if (!b || b.dataset.lang === lang) return;
-  localStorage.setItem(LANG_KEY, b.dataset.lang); // the board window picks this up via the storage event
-  location.reload();
+  if (!b) return;
+  try { localStorage.setItem(LANG_KEY, b.dataset.lang); } catch {}
+  setLanguage(b.dataset.lang);
 });
 
 function checkQuestions(qs) {
@@ -336,7 +343,7 @@ function renderHost() {
       <span class="score">${tt('bank')}: ${s.bank * s.multiplier}</span>
       ${s.teams.map((team, i) => `<button data-a="award" data-i="${i}" ${s.awarded ? 'disabled' : ''}>${tt('awardTo', esc(team.name))}</button>`).join('')}
       <button data-a="revealAll">${tt('revealAll')}</button>
-      ${s.awarded ? `<span class="hint">${t('awardedHint')}</span>` : ''}
+      ${s.awarded ? `<span class="hint">${tt('awardedHint')}</span>` : ''}
     </div>
     <div class="bar"><button data-a="newGame">${tt('newGame')}</button><span class="langs">${langSwitch()}</span></div>`;
 }
@@ -465,7 +472,7 @@ function toggleFullscreen() {
 
 function initBoard() {
   renderBoard();
-  window.addEventListener('storage', e => { if (e.key === KEY) renderBoard(); if (e.key === LANG_KEY) location.reload(); });
+  window.addEventListener('storage', e => { if (e.key === KEY) renderBoard(); if (e.key === LANG_KEY) setLanguage(e.newValue); });
   document.addEventListener('dblclick', toggleFullscreen);
   document.addEventListener('keydown', e => { if (e.key.toLowerCase() === 'f') toggleFullscreen(); });
 }
